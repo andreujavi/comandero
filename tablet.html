@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GastroPos - Comanderos Tablet</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #f4f4f9; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Panel izquierdo: Zonas y Botones de Productos */
+        .panel-menu { flex: 2; padding: 20px; overflow-y: auto; border-right: 2px solid #ddd; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Panel derecho: Mesa y Resumen de la Comanda */
+        .panel-comanda { flex: 1; background: #fff; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: -2px 0 5px rgba(0,0,0,0.05); }
+
+        h2 { color: #333; margin-bottom: 10px; font-size: 1.2rem; }
+        
+        /* Selector de Zonas (Pestañas) */
+        .zonas-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; padding: 10px; background: #e0e0e0; border: none; cursor: pointer; font-weight: bold; border-radius: 5px 5px 0 0; transition: background 0.2s; }
+        .tab-btn.active { background: #4CAF50; color: white; }
+
+        /* Contenedor de Productos por Zona */
+        .zona-contenido { display: none; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #fff; padding: 15px; border-radius: 0 0 5px 5px; border: 1px solid #ddd; }
+        .zona-contenido.active { display: grid; }
+
+        .btn-plato { background: #2196F3; color: white; border: none; padding: 15px 10px; font-size: 14px; cursor: pointer; border-radius: 5px; text-align: center; font-weight: bold; }
+        .btn-plato:active { background: #1976D2; }
+
+        /* Sección Añadir Producto Personalizado */
+        .custom-product-box { background: #fff; padding: 12px; border: 1px solid #ddd; border-radius: 5px; display: flex; gap: 10px; }
+        .custom-product-box input { flex: 1; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-add-custom { background: #FF9800; color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        .btn-add-custom:active { background: #F57C00; }
+
+        /* Elementos del Panel Comanda */
+        .grupo-mesa { margin-bottom: 15px; }
+        .grupo-mesa select { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+
+        .carrito-container { flex: 1; background: #fafafa; border: 1px solid #ddd; border-radius: 5px; padding: 10px; overflow-y: auto; margin-bottom: 15px; max-height: 40vh; }
+        .carrito-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-eliminar { background: none; border: none; color: #f44336; cursor: pointer; font-weight: bold; font-size: 16px; }
+
+        /* Botones de acción inferior */
+        .botones-accion { display: flex; flex-direction: column; gap: 10px; }
+        .btn-ver-ticket { background: #607D8B; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        .btn-ver-ticket:active { background: #455A64; }
+
+        .btn-enviar { background: #4CAF50; color: white; border: none; padding: 15px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; text-transform: uppercase; }
+        .btn-enviar:active { background: #388E3C; }
+
+        /* Modal para ver el Ticket en pantalla */
+        #modal-ticket { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .ticket-content { background: white; padding: 25px; width: 320px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: monospace; }
+        .ticket-content h3 { text-align: center; margin-bottom: 15px; font-family: Arial, sans-serif; }
+        .ticket-lineas { border-top: 1px dashed #333; border-bottom: 1px dashed #333; padding: 10px 0; margin: 10px 0; min-height: 80px; max-height: 150px; overflow-y: auto; }
+        .btn-cerrar-modal { background: #f44336; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; font-family: Arial, sans-serif; }
+    </style>
+</head>
+<body>
+
+    <!-- ZONA IZQUIERDA: SELECCIÓN DE PRODUCTOS Y BOTÓN PERSONALIZADO -->
+    <div class="panel-menu">
+        <h2>🍽️ Zonas de Productos</h2>
+        
+        <!-- Pestañas de Zonas -->
+        <div class="zonas-tabs">
+            <button class="tab-btn active" onclick="cambiarZona('zona-refrescos')">Refrescos</button>
+            <button class="tab-btn" onclick="cambiarZona('zona-combinados')">Combinados</button>
+            <button class="tab-btn" onclick="cambiarZona('zona-alcohol')">Alcohol</button>
+            <button class="tab-btn" onclick="cambiarZona('zona-carta')">A la Carta</button>
+        </div>
+
+        <!-- 1. ZONA: REFRESCOS -->
+        <div id="zona-refrescos" class="zona-contenido active">
+            <button class="btn-plato" onclick="agregarAlCarrito('Coca-Cola')">🥤 Coca-Cola</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Fanta Naranja')">🍊 Fanta Naranja</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Fanta Limón')">🍋 Fanta Limón</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Aquarius')">💧 Aquarius</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Nestea')">🧊 Nestea</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Agua Mineral')">🍼 Agua Mineral</button>
+        </div>
+
+        <!-- 2. ZONA: PLATOS COMBINADOS -->
+        <div id="zona-combinados" class="zona-contenido">
+            <button class="btn-plato" onclick="agregarAlCarrito('Plato Lomo con Patatas')">🥩 Lomo con Patatas</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Plato Pechuga')">🍗 Pechuga a la Plancha</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Plato Huevos y Bacon')">🍳 Huevos y Bacon</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Plato Hamburguesa Completa')">🍔 Hamburguesa Comp.</button>
+        </div>
+
+        <!-- 3. ZONA: BEBIDAS ALCOHÓLICAS -->
+        <div id="zona-alcohol" class="zona-contenido">
+            <button class="btn-plato" onclick="agregarAlCarrito('Caña de Cerveza')">🍺 Caña Cerveza</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Jarra de Cerveza')">🍻 Jarra Cerveza</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Copa de Vino Tinto')">🍷 Vino Tinto</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Copa de Vino Blanco')">🥂 Vino Blanco</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Gin Tonic')">🍸 Gin Tonic</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Cubata Ron-Cola')">🥃 Ron-Cola</button>
+        </div>
+
+        <!-- 4. ZONA: PLATOS A LA CARTA -->
+        <div id="zona-carta" class="zona-contenido">
+            <button class="btn-plato" onclick="agregarAlCarrito('Entrecot de Ternera')">🥩 Entrecot</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Merluza a la Vasca')">🐟 Merluza Vasca</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Paella de Marisco')">🥘 Paella Marisco</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Ensalada César')">🥗 Ensalada César</button>
+            <button class="btn-plato" onclick="agregarAlCarrito('Solomillo al Pedro Ximenez')">🍖 Solomillo P.X.</button>
+        </div>
+
+        <!-- ➕ Botón para añadir productos personalizados -->
+        <h2>✏️ Añadir Producto Personalizado</h2>
+        <div class="custom-product-box">
+            <input type="text" id="input-custom-plato" placeholder="Ej: 1x Café sin lactosa...">
+            <button class="btn-add-custom" onclick="agregarProductoPersonalizado()">Añadir</button>
+        </div>
+    </div>
+
+    <!-- ZONA DERECHA: RESUMEN Y ACCIONES -->
+    <div class="panel-comanda">
+        <div>
+            <h2>📝 Ticket de Comanda</h2>
+            
+            <div class="grupo-mesa">
+                <label for="select-mesa" style="font-size: 14px; font-weight: bold; display: block; margin-bottom: 5px;">Mesa o Ubicación:</label>
+                <select id="select-mesa">
+                    <optgroup label="🏠 Interior">
+                        <option value="Interior 1">Interior 1</option>
+                        <option value="Interior 2">Interior 2</option>
+                        <option value="Interior 3">Interior 3</option>
+                        <option value="Interior 4">Interior 4</option>
+                        <option value="Interior 5">Interior 5</option>
+                    </optgroup>
+                    <optgroup label="☀️ Exterior (Terraza)">
+                        <option value="Exterior 1">Exterior 1</option>
+                        <option value="Exterior 2">Exterior 2</option>
+                        <option value="Exterior 3">Exterior 3</option>
+                        <option value="Exterior 4">Exterior 4</option>
+                        <option value="Exterior 5">Exterior 5</option>
+                    </optgroup>
+                    <optgroup label="🍺 Barra">
+                        <option value="Barra 1">Barra 1</option>
+                        <option value="Barra 2">Barra 2</option>
+                        <option value="Barra 3">Barra 3</option>
+                        <option value="Barra 4">Barra 4</option>
+                        <option value="Barra 5">Barra 5</option>
+                    </optgroup>
+                    <optgroup label="🧪 Pruebas">
+                        <option value="Mesa 99">Mesa 99 (Prueba)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <label style="font-size: 14px; font-weight: bold; display: block; margin-bottom: 5px;">Productos seleccionados:</label>
+            <div class="carrito-container" id="lista-carrito">
+                <p style="color: #888; text-align: center; margin-top: 20px;">Sin productos añadidos...</p>
+            </div>
+        </div>
+
+        <div class="botones-accion">
+            <button class="btn-ver-ticket" onclick="mostrarTicketPantalla()">👁️ Ver Ticket en Pantalla</button>
+            <button class="btn-enviar" onclick="enviarPedidoReal()">🚀 Enviar a Cocina</button>
+        </div>
+    </div>
+
+    <!-- VENTANA MODAL (VISOR DE TICKET) -->
+    <div id="modal-ticket" style="display: none;">
+        <div class="ticket-content">
+            <h3>🧾 GASTROPOS - TICKET</h3>
+            <p><strong>Mesa:</strong> <span id="ticket-modal-mesa"></span></p>
+            <p><strong>Hora:</strong> <span id="ticket-modal-hora"></span></p>
+            <div class="ticket-lineas" id="ticket-modal-items">
+                <!-- Se llena mediante JS -->
+            </div>
+            <button class="btn-cerrar-modal" onclick="cerrarTicketPantalla()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ CAMBIA ESTA IP POR LA IP REAL DE TU PC (obtenida con ipconfig)
+        const URL_SERVIDOR = 'http://192.168.1.150:3000/api/pedidos';
+
+        let carrito = [];
+
+        // Cambio de pestañas de zonas
+        function cambiarZona(zonaId) {
+            document.querySelectorAll('.zona-contenido').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(zonaId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Añadir plato estándar
+        function agregarAlCarrito(nombrePlato) {
+            carrito.push(nombrePlato);
+            actualizarVistaCarrito();
+        }
+
+        // Añadir producto escrito manualmente desde el input
+        function agregarProductoPersonalizado() {
+            const input = document.getElementById('input-custom-plato');
+            const texto = input.value.trim();
+            if (!texto) {
+                alert("⚠️ Escribe el nombre del producto personalizado.");
+                return;
+            }
+            carrito.push(texto);
+            input.value = ""; // Limpiar input
+            actualizarVistaCarrito();
+        }
+
+        // Actualizar lista visual
+        function actualizarVistaCarrito() {
+            const contenedor = document.getElementById('lista-carrito');
+            if (carrito.length === 0) {
+                contenedor.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">Sin productos añadidos...</p>';
+                return;
+            }
+
+            let html = "";
+            carrito.forEach((plato, index) => {
+                html += `
+                    <div class="carrito-item">
+                        <span>• ${plato}</span>
+                        <button class="btn-eliminar" onclick="eliminarItem(${index})">✕</button>
+                    </div>
+                `;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        // Eliminar producto individual
+        function eliminarItem(index) {
+            carrito.splice(index, 1);
+            actualizarVistaCarrito();
+        }
+
+        // Mostrar ticket visual flotante en pantalla
+        function mostrarTicketPantalla() {
+            if (carrito.length === 0) {
+                alert("⚠️ No hay productos en el ticket para mostrar.");
+                return;
+            }
+
+            const mesa = document.getElementById('select-mesa').value;
+            const horaActual = new Date().toLocaleTimeString();
+
+            document.getElementById('ticket-modal-mesa').innerText = mesa;
+            document.getElementById('ticket-modal-hora').innerText = horaActual;
+
+            let htmlItems = "";
+            carrito.forEach(item => {
+                htmlItems += `<div>- ${item}</div>`;
+            });
+            document.getElementById('ticket-modal-items').innerHTML = htmlItems;
+
+            document.getElementById('modal-ticket').style.display = 'flex';
+        }
+
+        // Cerrar visor de ticket
+        function cerrarTicketPantalla() {
+            document.getElementById('modal-ticket').style.display = 'none';
+        }
+
+        // Enviar pedido al PC
+        async function enviarPedidoReal() {
+            if (carrito.length === 0) {
+                alert("⚠️ Selecciona al menos un producto antes de enviar.");
+                return;
+            }
+
+            const mesa = document.getElementById('select-mesa').value;
+            const detallesTexto = carrito.join(", ");
+
+            const datosComanda = {
+                mesa_id: mesa,
+                detalles: detallesTexto
+            };
+
+            try {
+                const response = await fetch(URL_SERVIDOR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosComanda)
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    alert("✅ ¡Comanda enviada a cocina correctamente!");
+                    carrito = []; 
+                    actualizarVistaCarrito();
+                } else {
+                    alert("❌ Error al procesar la comanda en el servidor.");
+                }
+
+            } catch (error) {
+                console.error("Error de red:", error);
+                alert("❌ Error: No se puede conectar con el PC. Revisa la IP o el Firewall.");
+            }
+        }
+    </script>
+</body>
+</html>

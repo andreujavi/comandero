@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GastroPos - Panel de Cocina</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            background-color: #ffc107; /* Pendiente */
+            font-weight: bold;
+        }
+        .estado-conexion {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+   
+    <div class="container">
+        <h1>👨‍🍳 Comandas en Tiempo Real (Cocina / PC)</h1>
+        <div id="estado-conexion" class="estado-conexion">Conectando con el servidor...</div>
+          <button id="btn-probar-envio">Enviar Comanda</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Mesa</th>
+                    <th>Detalles del Pedido</th>
+                    <th>Estado</th>
+                    <th>Hora</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-pedidos">
+                <tr>
+                    <td colspan="5" style="text-align: center;">Cargando pedidos...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // URL del servidor backend de Node.js en el PC
+        // - Si abres esto en el propio PC: 'http://localhost:3000/api/pedidos'
+        // - Si lo abres desde la tablet u otro dispositivo: 'http://IP_DE_TU_PC:3000/api/pedidos'
+        const URL_SERVIDOR = 'http://localhost:3000/api/pedidos';
+        
+        async function cargarPedidosEnPC() {
+            const tbody = document.getElementById('tabla-pedidos');
+            const lblEstado = document.getElementById('estado-conexion');
+
+            try {
+                const response = await fetch(URL_SERVIDOR);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    lblEstado.textContent = "🟢 Conectado correctamente al servidor";
+                    lblEstado.style.color = "green";
+                    
+                    tbody.innerHTML = ''; // Limpiar la tabla
+
+                    if (data.pedidos.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #777;">No hay pedidos registrados todavía</td></tr>`;
+                        return;
+                    }
+
+                    // Rellenar la tabla con cada pedido recibido de la base de datos
+                    data.pedidos.forEach(pedido => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>#${pedido.id}</td>
+                                <td><strong>Mesa ${pedido.mesa_id}</strong></td>
+                                <td>${pedido.detalles}</td>
+                                <td><span class="badge">${pedido.estado}</span></td>
+                                <td>${pedido.created_at}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    lblEstado.textContent = "🔴 Error en la respuesta del servidor";
+                    lblEstado.style.color = "red";
+                }
+            } catch (error) {
+                console.error('Error de conexión:', error);
+                lblEstado.textContent = "🔴 Desconectado del servidor (Comprueba que 'node server.js' esté activo)";
+                lblEstado.style.color = "red";
+                
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error de conexión con el servidor backend</td></tr>`;
+            }
+        }
+
+        // Cargar los pedidos inmediatamente al abrir la página
+        cargarPedidosEnPC();
+
+        // Actualizar la tabla de forma automática cada 3 segundos
+        setInterval(cargarPedidosEnPC, 3000);
+        // Función que simula el envío de una comanda de prueba
+async function enviarComandaPrueba() {
+    const URL_SERVIDOR = 'http://192.168.1.150:3000/api/pedidos'; // <-- Cambia por tu IP real
+
+    const datosPrueba = {
+        mesa_id: 99, 
+        detalles: "1x Prueba desde la Tablet"
+    };
+
+    try {
+        console.log("Enviando comanda de prueba al servidor...");
+
+        const response = await fetch(URL_SERVIDOR, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datosPrueba)
+        });
+
+        const resultado = await response.json();
+
+        if (resultado.success) {
+            console.log("¡Éxito! Pedido guardado en el PC:", resultado);
+            alert("✅ ¡Comanda de prueba enviada y recibida con éxito en el PC!");
+        } else {
+            console.error("El servidor rechazó el pedido:", resultado);
+            alert("❌ El servidor respondió, pero hubo un error al guardar.");
+        }
+
+    } catch (error) {
+        console.error("Fallo total de conexión:", error);
+        alert("❌ Error: La tablet no puede comunicarse con el PC. Revisa la IP o el Firewall.");
+    }
+}
+
+  // Conectar la función al botón que creaste en la tablet
+        document.getElementById('btn-probar-envio').addEventListener('click', enviarComandaPrueba);
+// Comprobar si el botón existe antes de añadirle el evento
+   const botonPrueba = document.getElementById('btn-probar-envio');
+    if (botonPrueba) {
+    botonPrueba.addEventListener('click', enviarComandaPrueba);
+     }
+
+    </script>
+
+</body>
+</html>

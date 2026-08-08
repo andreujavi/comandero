@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>GastroPOS · Bar & Restaurante</title>
+
+  <!-- SQLite WASM Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --sidebar: #0f172a;
+      --sidebar-soft: #1e293b;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    /* Layout Principal */
+    .app {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar - PC */
+    .sidebar {
+      background: var(--sidebar);
+      color: #ffffff;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 10;
+    }
+
+    .brand {
+      padding: 6px 8px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+    }
+
+    .brand small {
+      display: block;
+      margin-top: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav button {
+      padding: 12px 14px;
+      background: transparent;
+      color: #cbd5e1;
+      border-radius: var(--radius-sm);
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: var(--sidebar-soft);
+      color: #ffffff;
+    }
+
+    .nav button.active {
+      border-left: 3px solid var(--primary);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .sidebar-footer strong {
+      color: #ffffff;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* Main Container */
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    .topbar {
+      min-height: 70px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 9;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+
+    .topbar p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .clock {
+      border-radius: var(--radius-sm);
+      background: var(--surface-soft);
+      color: #475569;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid var(--border);
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
+      background: var(--surface-soft);
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .content {
+      padding: 24px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .section-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* Componentes Botones */
+    .btn {
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    .btn-primary { background: var(--primary); color: #ffffff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #ffffff; }
+    .btn-danger { background: var(--danger-light); color: var(--danger); }
+    .btn-soft { background: var(--surface-soft); color: #334155; border: 1px solid var(--border); }
+
+    /* Dashboard */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card, .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-card small {
+      margin-top: 6px;
+      display: block;
+      color: var(--success);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child { border-bottom: 0; }
+
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      background: var(--primary-light);
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+    }
+
+    .activity-info { flex: 1; }
+    .activity-info strong { display: block; font-size: 13px; }
+    .activity-info span { color: var(--muted); font-size: 12px; display: block; margin-top: 2px; }
+    .activity-price { font-weight: 800; font-size: 14px; }
+
+    /* Zonas y Mesas */
+    .zone-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 20px;
+    }
+
+    .zone-tab {
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: #475569;
+      font-weight: 700;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .zone-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.free { background: var(--success); }
+    .dot.busy { background: var(--danger); }
+    .dot.reserved { background: var(--warning); }
+
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .table-card {
+      min-height: 135px;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .table-card .status {
+      display: inline-flex;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 20px;
+      align-self: flex-start;
+    }
+
+    .status-free { color: var(--success); background: var(--success-light); }
+    .status-busy { color: var(--danger); background: var(--danger-light); }
+    .status-reserved { color: var(--warning); background: var(--warning-light); }
+
+    .table-card h3 { margin: 10px 0 2px; font-size: 16px; font-weight: 800; }
+    .table-card p { margin: 0; color: var(--muted); font-size: 12px; }
+    .table-card .table-total { font-size: 13px; font-weight: 800; color: var(--primary); margin-top: 8px; }
+
+    /* Layout POS - Productos y Comanda */
+    .pos-mobile-nav {
+      display: none;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .pos-mobile-nav button {
+      flex: 1;
+      padding: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .pos-mobile-nav button.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .pos-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr 340px;
+      gap: 16px;
+      min-height: 600px;
+      align-items: start;
+    }
+
+    .pos-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: calc(100vh - 140px);
+      overflow: hidden;
+    }
+
+    .pos-panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-soft);
+    }
+
+    .pos-panel-header h3 { margin: 0; font-size: 14px; font-weight: 800; }
+    .pos-panel-header small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+
+    .categories {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+
+    .category-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #475569;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .category-btn.active {
+      background: var(--primary-light);
+      border-color: #bfdbfe;
+      color: var(--primary);
+    }
+
+    .products {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      overflow-y: auto;
+      align-content: start;
+    }
+
+    .product-btn {
+      min-height: 95px;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .product-btn:hover {
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+    }
+
+    .product-icon { font-size: 22px; }
+    .product-name { margin-top: 6px; font-size: 12px; font-weight: 800; line-height: 1.2; }
+    .product-price { margin-top: 4px; color: var(--primary); font-size: 13px; font-weight: 800; }
+
+    .order-lines {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 14px;
+    }
+
+    .order-empty {
+      padding: 40px 16px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .order-line {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-line-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .order-line-name { font-size: 13px; font-weight: 800; }
+    .order-line-price { font-size: 13px; font-weight: 800; }
+
+    .order-line-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-soft);
+      color: #334155;
+      border: 1px solid var(--border);
+      font-weight: 800;
+      font-size: 14px;
+      display: grid;
+      place-items: center;
+    }
+
+    .qty-number { min-width: 20px; text-align: center; font-size: 13px; font-weight: 800; }
+    .line-note { margin-left: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; color: #854d0e; background: var(--warning-light); }
+    .delete-line { color: var(--danger); background: var(--danger-light); font-size: 13px; border-radius: 6px; padding: 4px 8px; }
+
+    .order-footer {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface-soft);
+    }
+
+    .summary-row { display: flex; justify-content: space-between; margin: 4px 0; color: var(--muted); font-size: 12px; }
+    .summary-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 800; }
+    .summary-total strong { color: var(--primary); font-size: 20px; }
+
+    .order-actions { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .order-actions .btn:last-child { grid-column: span 2; }
+
+    .quick-orders { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .quick-order-btn { padding: 12px; border-radius: var(--radius-sm); text-align: left; background: var(--surface-soft); border: 1px solid var(--border); color: #334155; font-size: 13px; font-weight: 700; }
+
+    /* Modales */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(520px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { margin: 0; font-size: 17px; font-weight: 800; }
+    .close-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-soft); color: var(--muted); font-size: 18px; }
+    .modal-body { padding: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { color: #475569; font-weight: 700; font-size: 12px; }
+    .form-group input, .form-group select { border: 1px solid var(--border); padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface); font-size: 14px; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; background: var(--surface-soft); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(100px);
+      z-index: 60;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 30px;
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Bottom Navigation Bar - Móvil */
+    .mobile-nav-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 6px 8px calc(6px + var(--safe-bottom));
+      z-index: 40;
+      justify-content: space-around;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+    }
+
+    .mobile-nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .mobile-nav-btn.active {
+      color: var(--primary);
+    }
+
+    .mobile-nav-btn .icon {
+      font-size: 18px;
+    }
+
+    /* Tablas / Data Panels */
+    .data-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .toolbar {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-soft);
+    }
+
+    .search {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      width: 220px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: var(--surface-soft); color: var(--muted); padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+
+    /* MEDIA QUERIES - RESPONSIVE BREAKPOINTS */
+    @media (max-width: 1024px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .mobile-nav-bar { display: flex; }
+      .main { padding-bottom: calc(70px + var(--safe-bottom)); }
+      .topbar { padding: 0 16px; }
+      .content { padding: 16px; }
+
+      .dashboard-grid { grid-template-columns: 1fr; }
+
+      .pos-layout {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .pos-mobile-nav { display: flex; }
+
+      .categories {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+
+      .category-btn { white-space: nowrap; }
+
+      .pos-panel.panel-quick { display: none; }
+      .pos-panel.panel-products { display: flex; }
+      .pos-panel.panel-order { display: none; }
+
+      /* Modos activados por la navegacion movil del POS */
+      .pos-layout.show-order .panel-products { display: none; }
+      .pos-layout.show-order .panel-order { display: flex; max-height: none; }
+    }
+
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .tables-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+      .topbar-actions .clock { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- Sidebar Desktop -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <div class="brand-icon">🍽️</div>
+          GastroPOS
+        </div>
+        <small>TPV Bar & Restaurante</small>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-link active" data-view="dashboard">
+          <span class="nav-icon">◈</span> Resumen
+        </button>
+        <button class="nav-link" data-view="zonas">
+          <span class="nav-icon">▦</span> Zonas y Mesas
+        </button>
+        <button class="nav-link" data-view="pedidos">
+          <span class="nav-icon">🧾</span> Pedidos / POS
+        </button>
+        <button class="nav-link" data-view="productos">
+          <span class="nav-icon">☕</span> Productos
+        </button>
+        <button class="nav-link" data-view="tickets">
+          <span class="nav-icon">▤</span> Historial
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <strong>● Caja Abierta</strong>
+        Fondo local: 150,00 €
+      </div>
+    </aside>
+
+    <!-- Área Principal -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Resumen de Hoy</h1>
+          <p id="pageSubtitle">Operativa actual del restaurante</p>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="clock" id="clock">--:--</div>
+          <div class="user-chip">
+            <div class="avatar">TPV</div>
+            Caja 1
+          </div>
+        </div>
+      </header>
+
+      <section class="content">
+        <!-- VISTA DASHBOARD -->
+        <div class="view active" id="dashboard">
+          <div class="stats">
+            <article class="stat-card">
+              <span class="label">Ventas Hoy</span>
+              <strong id="statVentas">0,00 €</strong>
+              <small>↑ Actualizado</small>
+            </article>
+            <article class="stat-card">
+              <span class="label">Tickets</span>
+              <strong id="statTickets">0</strong>
+              <small>Emitidos hoy</small>
+            </article>
+            <article class="stat-card">
+              <span class="label">Ocupación</span>
+              <strong id="statMesas">0 / 0</strong>
+              <small>Mesas activas</small>
+            </article>
+            <article class="stat-card">
+              <span class="label">Abiertos</span>
+              <strong id="statPedidos">0</strong>
+              <small>En curso</small>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Últimas Ventas</h3>
+                <button class="btn btn-soft" onclick="showView('tickets')">Ver Todos</button>
+              </div>
+              <div id="recentActivity"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Acciones Rápidas</h3>
+              </div>
+              <div class="quick-orders">
+                <button class="quick-order-btn" onclick="startQuickOrder('barra')">🍺 Pedido de Barra</button>
+                <button class="quick-order-btn" onclick="startQuickOrder('para_llevar')">🛍️ Para Llevar</button>
+                <button class="quick-order-btn" onclick="showView('zonas')">🪑 Seleccionar Mesa</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA ZONAS / MESAS -->
+        <div class="view" id="zonas">
+          <div class="section-header">
+            <div>
+              <h2>Plano de Mesas</h2>
+              <p>Selecciona una mesa para gestionar la comanda</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot free"></i> Libre</span>
+              <span><i class="dot busy"></i> Ocupada</span>
+            </div>
+          </div>
+
+          <div class="zone-tabs">
+            <button class="zone-tab active" data-zone="Interior">🏠 Sala Interior</button>
+            <button class="zone-tab" data-zone="Exterior">☀️ Terraza</button>
+            <button class="zone-tab" data-zone="Barra">🍸 Barra</button>
+          </div>
+
+          <div class="tables-grid" id="tablesGrid"></div>
+        </div>
+
+        <!-- VISTA PEDIDOS / POS -->
+        <div class="view" id="pedidos">
+          <!-- Selector Móvil de Vista POS -->
+          <div class="pos-mobile-nav">
+            <button class="active" id="btnPosProducts" onclick="togglePosMobileView('products')">🛒 Productos</button>
+            <button id="btnPosOrder" onclick="togglePosMobileView('order')">🧾 Cuenta (<span id="mobileOrderCount">0</span>)</button>
+          </div>
+
+          <div class="pos-layout" id="posLayout">
+            <!-- Columna 1: Accesos Rápidos (PC) -->
+            <section class="pos-panel panel-quick">
+              <div class="pos-panel-header">
+                <h3>Pedido Rápido</h3>
+                <small>Comandas sin mesa</small>
+              </div>
+              <div class="quick-orders">
+                <button class="quick-order-btn" onclick="startQuickOrder('barra')">🍺 Barra</button>
+                <button class="quick-order-btn" onclick="startQuickOrder('para_llevar')">🛍️ Para Llevar</button>
+                <button class="quick-order-btn" onclick="startQuickOrder('delivery')">🛵 Delivery</button>
+              </div>
+            </section>
+
+            <!-- Columna 2: Catálogo de Productos -->
+            <section class="pos-panel panel-products">
+              <div class="categories" id="categories"></div>
+              <div class="products" id="productsGrid"></div>
+            </section>
+
+            <!-- Columna 3: Ticket / Cuenta Actual -->
+            <section class="pos-panel panel-order">
+              <div class="pos-panel-header">
+                <h3 id="orderTitle">Nuevo Pedido</h3>
+                <small id="currentOrderInfo">Sin mesa seleccionada</small>
+              </div>
+
+              <div class="order-lines" id="orderLines"></div>
+
+              <div class="order-footer">
+                <div class="summary-row"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
+                <div class="summary-row"><span>IVA (10%)</span><strong id="iva">0,00 €</strong></div>
+                <div class="summary-total"><span>Total</span><strong id="total">0,00 €</strong></div>
+
+                <div class="order-actions">
+                  <button class="btn btn-soft" onclick="saveOrder()">Guardar</button>
+                  <button class="btn btn-soft" onclick="sendToKitchen()">Cocina</button>
+                  <button class="btn btn-success" onclick="openPaymentModal()">Cobrar</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- VISTA PRODUCTOS -->
+        <div class="view" id="productos">
+          <div class="section-header">
+            <div>
+              <h2>Catálogo de Productos</h2>
+              <p>Gestiona los artículos de la carta</p>
+            </div>
+            <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo Producto</button>
+          </div>
+
+          <div class="data-panel">
+            <div class="toolbar">
+              <strong>Artículos</strong>
+              <input class="search" id="productSearch" type="search" placeholder="Buscar..." oninput="renderProductsTable()" />
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Destino</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA TICKETS -->
+        <div class="view" id="tickets">
+          <div class="section-header">
+            <div>
+              <h2>Historial de Ventas</h2>
+              <p>Registro local de tickets emitidos</p>
+            </div>
+            <button class="btn btn-soft" onclick="exportBackup()">💾 Copia SQLite</button>
+          </div>
+
+          <div class="data-panel">
+            <div class="toolbar">
+              <strong>Tickets</strong>
+              <input class="search" id="ticketSearch" type="search" placeholder="Buscar ticket..." oninput="renderTickets()" />
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nº Ticket</th>
+                    <th>Fecha</th>
+                    <th>Origen</th>
+                    <th>Pago</th>
+                    <th>Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="ticketsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="mobile-nav-bar">
+    <button class="mobile-nav-btn active" data-view="dashboard">
+      <span class="icon">◈</span> Inicio
+    </button>
+    <button class="mobile-nav-btn" data-view="zonas">
+      <span class="icon">▦</span> Mesas
+    </button>
+    <button class="mobile-nav-btn" data-view="pedidos">
+      <span class="icon">🧾</span> TPV POS
+    </button>
+    <button class="mobile-nav-btn" data-view="productos">
+      <span class="icon">☕</span> Carta
+    </button>
+    <button class="mobile-nav-btn" data-view="tickets">
+      <span class="icon">▤</span> Ventas
+    </button>
+  </nav>
+
+  <!-- Modal de Cobro -->
+  <div class="modal-backdrop" id="paymentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Cobrar Cuenta</h3>
+        <button class="close-btn" onclick="closeModal('paymentModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: var(--primary-light); padding: 16px; border-radius: var(--radius-md); text-align: center; margin-bottom: 16px;">
+          <span style="color: var(--muted); font-size: 12px; font-weight: 700;">TOTAL A COBRAR</span>
+          <strong id="paymentTotal" style="display: block; font-size: 32px; color: var(--primary); margin-top: 2px;">0,00 €</strong>
+       </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
+          <button class="btn btn-soft active" class="pay-method" data-pay="Efectivo" onclick="setPaymentMethod('Efectivo')">💵 Efectivo</button>
+          <button class="btn btn-soft" class="pay-method" data-pay="Tarjeta" onclick="setPaymentMethod('Tarjeta')">💳 Tarjeta</button>
+          <button class="btn btn-soft" class="pay-method" data-pay="Bizum" onclick="setPaymentMethod('Bizum')">📱 Bizum</button>
+      </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Entregado (€)</label>
+            <input id="cashReceived" type="number" step="0.01" placeholder="0.00" oninput="updateChange()" />
+          </div>
+          <div class="form-group">
+            <label>Cambio</label>
+            <input id="changeAmount" type="text" readonly value="0,00 €" />
+          </div>
+          <div class="form-group">
+            <label>Referencia</label>
+            <input id="paymentReference" type="text" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-soft" onclick="closeModal('paymentModal')">Cancelar</button>
+        <button class="btn btn-success" onclick="completePayment()">Finalizar Cobro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Producto -->
+  <div class="modal-backdrop" id="productModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="productModalTitle">Nuevo Producto</h3>
+        <button class="close-btn" onclick="closeModal('productModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="productId" />
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Nombre del Producto</label>
+            <input id="productName" type="text" placeholder="Ej. Caña de Cerveza" />
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="productCategory">
+              <option>Bebidas</option>
+              <option>Tapas</option>
+              <option>Bocadillos</option>
+              <option>Postres</option>
+              <option>Cafés</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Precio (€)</label>
+            <input id="productPrice" type="number" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="form-group">
+            <label>Destino</label>
+            <select id="productDestination">
+              <option value="Barra">Barra</option>
+              <option value="Cocina">Cocina</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Icono (Emoji)</label>
+            <input id="productIcon" type="text" value="🍽️" maxlength="2" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-soft" onclick="closeModal('productModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Script Lógica SQLite y UI -->
+  <script>
+    let SQL, db;
+    let selectedZone = "Interior";
+    let selectedCategory = "Todos";
+    let selectedPaymentMethod = "Efectivo";
+
+    let currentOrder = {
+      id: null,
+      type: "barra",
+      tableId: null,
+      tableName: "Pedido Rápido",
+      lines: []
+    };
+
+    const defaultProducts = [
+      ["Cerveza Barril", "Bebidas", 2.50, "Barra", "🍺"],
+      ["Copa de Vino", "Bebidas", 3.20, "Barra", "🍷"],
+      ["Agua Mineral", "Bebidas", 1.80, "Barra", "💧"],
+      ["Patatas Bravas", "Tapas", 6.50, "Cocina", "🍟"],
+      ["Croquetas", "Tapas", 8.00, "Cocina", "🥟"],
+      ["Bocadillo Tortilla", "Bocadillos", 5.50, "Cocina", "🥪"],
+      ["Café con Leche", "Cafés", 1.60, "Barra", "☕"],
+      ["Tarta de Queso", "Postres", 5.00, "Cocina", "🍰"]
+    ];
+
+    const defaultTables = [
+      ["Interior", "Mesa 1", 4], ["Interior", "Mesa 2", 4], ["Interior", "Mesa 3", 2],
+      ["Exterior", "Terraza 1", 4], ["Exterior", "Terraza 2", 6],
+      ["Barra", "Barra 1", 1], ["Barra", "Barra 2", 1]
+    ];
+
+    function money(v) {
+      return Number(v || 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+    }
+
+    function sqlRows(query, params = []) {
+      const stmt = db.prepare(query);
+      stmt.bind(params);
+      const rows = [];
+      while (stmt.step()) rows.push(stmt.getAsObject());
+      stmt.free();
+      return rows;
+    }
+
+    function sqlValue(query, params = [], fallback = 0) {
+      const r = sqlRows(query, params);
+      return r.length ? Object.values(r[0])[0] : fallback;
+    }
+
+    function persistDatabase() {
+      const data = db.export();
+      localStorage.setItem("gastropos_sqlite", JSON.stringify(Array.from(data)));
+    }
+
+    async function initDatabase() {
+      SQL = await initSqlJs({
+        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+      });
+
+      const saved = localStorage.getItem("gastropos_sqlite");
+      db = saved ? new SQL.Database(new Uint8Array(JSON.parse(saved))) : new SQL.Database();
+
+      db.run(`
+        CREATE TABLE IF NOT EXISTS tables_restaurant (id INTEGER PRIMARY KEY AUTOINCREMENT, zone TEXT, name TEXT, capacity INTEGER, status TEXT DEFAULT 'libre');
+        CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, price REAL, destination TEXT, icon TEXT, available INTEGER DEFAULT 1);
+        CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, table_id INTEGER, order_type TEXT, table_name TEXT, status TEXT DEFAULT 'abierto', created_at TEXT);
+        CREATE TABLE IF NOT EXISTS order_lines (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, product_id INTEGER, product_name TEXT, price REAL, quantity INTEGER DEFAULT 1, notes TEXT);
+        CREATE TABLE IF NOT EXISTS tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_number TEXT UNIQUE, order_id INTEGER, table_name TEXT, payment_method TEXT, subtotal REAL, iva REAL, total REAL, created_at TEXT);
+      `);
+
+      if (sqlValue("SELECT COUNT(*) FROM products") === 0) {
+        defaultProducts.forEach(p => db.run("INSERT INTO products (name, category, price, destination, icon) VALUES (?, ?, ?, ?, ?)", p));
+      }
+
+      if (sqlValue("SELECT COUNT(*) FROM tables_restaurant") === 0) {
+        defaultTables.forEach(t => db.run("INSERT INTO tables_restaurant (zone, name, capacity) VALUES (?, ?, ?)", t));
+      }
+
+      persistDatabase();
+      renderAll();
+    }
+
+    function renderAll() {
+      renderDashboard();
+      renderTables();
+      renderCategories();
+      renderProductsGrid();
+      renderOrder();
+      renderProductsTable();
+      renderTickets();
+      updateClock();
+    }
+
+    function updateClock() {
+      const d = new Date();
+      document.getElementById("clock").textContent = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    }
+    setInterval(updateClock, 10000);
+
+    function showView(view) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.querySelectorAll(".nav-link, .mobile-nav-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.view === view);
+      });
+      document.getElementById(view).classList.add("active");
+    }
+
+    document.querySelectorAll(".nav-link, .mobile-nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => showView(btn.dataset.view));
+    });
+
+    document.querySelectorAll(".zone-tab").forEach(tab => {
+      tab.addEventListener("click", e => {
+        selectedZone = e.target.dataset.zone;
+        document.querySelectorAll(".zone-tab").forEach(t => t.classList.toggle("active", t === e.target));
+        renderTables();
+      });
+    });
+
+    function togglePosMobileView(mode) {
+      const layout = document.getElementById("posLayout");
+      const btnProducts = document.getElementById("btnPosProducts");
+      const btnOrder = document.getElementById("btnPosOrder");
+
+      if (mode === "order") {
+        layout.classList.add("show-order");
+        btnOrder.classList.add("active");
+        btnProducts.classList.remove("active");
+      } else {
+        layout.classList.remove("show-order");
+        btnProducts.classList.add("active");
+        btnOrder.classList.remove("active");
+      }
+    }
+
+    function renderDashboard() {
+      const ventas = sqlValue("SELECT COALESCE(SUM(total),0) FROM tickets");
+      const tickets = sqlValue("SELECT COUNT(*) FROM tickets");
+      const ocupadas = sqlValue("SELECT COUNT(*) FROM tables_restaurant WHERE status='ocupada'");
+      const totalMesas = sqlValue("SELECT COUNT(*) FROM tables_restaurant");
+      const pedidos = sqlValue("SELECT COUNT(*) FROM orders WHERE status='abierto'");
+
+      document.getElementById("statVentas").textContent = money(ventas);
+      document.getElementById("statTickets").textContent = tickets;
+      document.getElementById("statMesas").textContent = `${ocupadas} / ${totalMesas}`;
+      document.getElementById("statPedidos").textContent = pedidos;
+    }
+
+    function renderTables() {
+      const tables = sqlRows("SELECT * FROM tables_restaurant WHERE zone=?", [selectedZone]);
+      const grid = document.getElementById("tablesGrid");
+
+      grid.innerHTML = tables.map(t => `
+        <button class="table-card" onclick="openTable(${t.id})">
+          <span class="status status-${t.status === 'ocupada' ? 'busy' : 'free'}">${t.status}</span>
+          <h3>${t.name}</h3>
+          <p>${t.capacity} Personas</p>
+          <div class="table-total">Abrir Pedido</div>
+        </button>
+      `).join("");
+    }
+
+    function openTable(id) {
+      const table = sqlRows("SELECT * FROM tables_restaurant WHERE id=?", [id])[0];
+      if (!table) return;
+
+      let order = sqlRows("SELECT * FROM orders WHERE table_id=? AND status='abierto' ORDER BY id DESC LIMIT 1", [id])[0];
+
+      if (!order) {
+        const now = new Date().toISOString();
+        db.run("INSERT INTO orders (table_id, order_type, table_name, created_at) VALUES (?, 'mesa', ?, ?)", [table.id, table.name, now]);
+        db.run("UPDATE tables_restaurant SET status='ocupada' WHERE id=?", [table.id]);
+        persistDatabase();
+        order = sqlRows("SELECT * FROM orders WHERE table_id=? AND status='abierto' ORDER BY id DESC LIMIT 1", [id])[0];
+      }
+
+      currentOrder = { id: order.id, type: "mesa", tableId: table.id, tableName: table.name, lines: loadOrderLines(order.id) };
+      showView("pedidos");
+      renderOrder();
+      showToast(`${table.name} cargada`);
+    }
+
+    function startQuickOrder(type) {
+      const labels = { barra: "Pedido Barra", para_llevar: "Para Llevar", delivery: "Delivery" };
+      const now = new Date().toISOString();
+      db.run("INSERT INTO orders (table_id, order_type, table_name, created_at) VALUES (NULL, ?, ?, ?)", [type, labels[type], now]);
+      const id = sqlValue("SELECT last_insert_rowid()");
+
+      currentOrder = { id, type, tableId: null, tableName: labels[type], lines: [] };
+      persistDatabase();
+      showView("pedidos");
+      renderOrder();
+      showToast(`${labels[type]} iniciado`);
+    }
+
+    function loadOrderLines(orderId) {
+      return sqlRows("SELECT * FROM order_lines WHERE order_id=?", [orderId]);
+    }
+
+    function renderCategories() {
+      const cats = ["Todos", ...new Set(sqlRows("SELECT category FROM products").map(r => r.category))];
+      document.getElementById("categories").innerHTML = cats.map(c => `
+        <button class="category-btn ${selectedCategory === c ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</button>
+      `).join("");
+    }
+
+    function selectCategory(c) {
+      selectedCategory = c;
+      renderCategories();
+      renderProductsGrid();
+    }
+
+    function renderProductsGrid() {
+      let q = "SELECT * FROM products WHERE available=1";
+      let p = [];
+      if (selectedCategory !== "Todos") { q += " AND category=?"; p.push(selectedCategory); }
+
+      const products = sqlRows(q, p);
+      document.getElementById("productsGrid").innerHTML = products.map(p => `
+        <button class="product-btn" onclick="addProductToOrder(${p.id})">
+          <span class="product-icon">${p.icon}</span>
+          <span class="product-name">${p.name}</span>
+          <span class="product-price">${money(p.price)}</span>
+        </button>
+      `).join("");
+    }
+
+    function addProductToOrder(pId) {
+      if (!currentOrder.id) startQuickOrder("barra");
+      const product = sqlRows("SELECT * FROM products WHERE id=?", [pId])[0];
+      if (!product) return;
+
+      const line = currentOrder.lines.find(l => l.product_id === pId);
+      if (line) {
+        line.quantity += 1;
+        db.run("UPDATE order_lines SET quantity=? WHERE id=?", [line.quantity, line.id]);
+      } else {
+        db.run("INSERT INTO order_lines (order_id, product_id, product_name, price, quantity) VALUES (?, ?, ?, ?, 1)",
+          [currentOrder.id, product.id, product.name, product.price]);
+        const lineId = sqlValue("SELECT last_insert_rowid()");
+        currentOrder.lines.push({ id: lineId, product_id: product.id, product_name: product.name, price: product.price, quantity: 1 });
+      }
+
+      persistDatabase();
+      renderOrder();
+    }
+
+    function renderOrder() {
+      document.getElementById("orderTitle").textContent = currentOrder.tableName;
+      document.getElementById("currentOrderInfo").textContent = currentOrder.id ? `Pedido #${currentOrder.id}` : "Sin pedido";
+
+      const container = document.getElementById("orderLines");
+      if (!currentOrder.lines.length) {
+        container.innerHTML = `<div class="order-empty">No hay productos en la comanda</div>`;
+      } else {
+        container.innerHTML = currentOrder.lines.map(l => `
+          <div class="order-line">
+            <div class="order-line-top">
+              <span class="order-line-name">${l.product_name}</span>
+              <span class="order-line-price">${money(l.price * l.quantity)}</span>
+            </div>
+            <div class="order-line-controls">
+              <button class="qty-btn" onclick="updateQty(${l.id}, -1)">-</button>
+              <span class="qty-number">${l.quantity}</span>
+              <button class="qty-btn" onclick="updateQty(${l.id}, 1)">+</button>
+              <button class="delete-line" onclick="removeLine(${l.id})">×</button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const subtotal = currentOrder.lines.reduce((s, l) => s + (l.price * l.quantity), 0);
+      const iva = subtotal * 0.10;
+      const total = subtotal + iva;
+
+      document.getElementById("subtotal").textContent = money(subtotal);
+      document.getElementById("iva").textContent = money(iva);
+      document.getElementById("total").textContent = money(total);
+
+      // Actualizar contador movil
+      const itemCount = currentOrder.lines.reduce((s, l) => s + l.quantity, 0);
+      document.getElementById("mobileOrderCount").textContent = itemCount;
+    }
+
+    function updateQty(lineId, delta) {
+      const line = currentOrder.lines.find(l => l.id === lineId);
+      if (!line) return;
+      line.quantity += delta;
+      if (line.quantity <= 0) return removeLine(lineId);
+
+      db.run("UPDATE order_lines SET quantity=? WHERE id=?", [line.quantity, line.id]);
+      persistDatabase();
+      renderOrder();
+    }
+
+    function removeLine(lineId) {
+      db.run("DELETE FROM order_lines WHERE id=?", [lineId]);
+      currentOrder.lines = currentOrder.lines.filter(l => l.id !== lineId);
+      persistDatabase();
+      renderOrder();
+    }
+
+    function openPaymentModal() {
+      if (!currentOrder.lines.length) return showToast("Añade productos primero");
+      const subtotal = currentOrder.lines.reduce((s, l) => s + (l.price * l.quantity), 0);
+      const total = subtotal * 1.10;
+
+      document.getElementById("paymentTotal").textContent = money(total);
+      document.getElementById("cashReceived").value = total.toFixed(2);
+      updateChange();
+      document.getElementById("paymentModal").classList.add("show");
+    }
+
+    function updateChange() {
+      const subtotal = currentOrder.lines.reduce((s, l) => s + (l.price * l.quantity), 0);
+      const total = subtotal * 1.10;
+      const rec = Number(document.getElementById("cashReceived").value || 0);
+      document.getElementById("changeAmount").value = money(Math.max(0, rec - total));
+    }
+
+    function completePayment() {
+      const subtotal = currentOrder.lines.reduce((s, l) => s + (l.price * l.quantity), 0);
+      const total = subtotal * 1.10;
+      const iva = subtotal * 0.10;
+      const ticketNum = `T-${Date.now().toString().slice(-6)}`;
+      const now = new Date().toISOString();
+
+      db.run("INSERT INTO tickets (ticket_number, order_id, table_name, payment_method, subtotal, iva, total, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [ticketNum, currentOrder.id, currentOrder.tableName, selectedPaymentMethod, subtotal, iva, total, now]);
+
+      db.run("UPDATE orders SET status='cerrado' WHERE id=?", [currentOrder.id]);
+      if (currentOrder.tableId) db.run("UPDATE tables_restaurant SET status='libre' WHERE id=?", [currentOrder.tableId]);
+
+      persistDatabase();
+      closeModal("paymentModal");
+      currentOrder = { id: null, type: "barra", tableId: null, tableName: "Pedido Rápido", lines: [] };
+
+      renderAll();
+      showView("tickets");
+      showToast(`Ticket ${ticketNum} completado`);
+    }
+
+    function renderProductsTable() {
+      const search = document.getElementById("productSearch")?.value?.toLowerCase() || "";
+      const products = sqlRows("SELECT * FROM products").filter(p => p.name.toLowerCase().includes(search));
+
+      document.getElementById("productsTable").innerHTML = products.map(p => `
+        <tr>
+          <td><strong>${p.icon} ${p.name}</strong></td>
+          <td>${p.category}</td>
+          <td><strong>${money(p.price)}</strong></td>
+          <td>${p.destination}</td>
+          <td><button class="btn btn-soft" onclick="editProduct(${p.id})">Editar</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderTickets() {
+      const tickets = sqlRows("SELECT * FROM tickets ORDER BY id DESC");
+      document.getElementById("ticketsTable").innerHTML = tickets.map(t => `
+        <tr>
+          <td><strong>${t.ticket_number}</strong></td>
+          <td>${new Date(t.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+          <td>${t.table_name}</td>
+          <td>${t.payment_method}</td>
+          <td><strong>${money(t.total)}</strong></td>
+          <td><button class="btn btn-soft" onclick="window.print()">🖨️</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function exportBackup() {
+      const data = db.export();
+      const blob = new Blob([data], { type: "application/x-sqlite3" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `gastropos_${new Date().toISOString().slice(0,10)}.sqlite`;
+      a.click();
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    initDatabase();
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+<script>
+    // 💡 Detecta automáticamente si estás en localhost o en la IP de la red local
+    const socket = io(); 
+    
+    let carrito = [];
+
+    const contenedorTicket = document.querySelector('.ticket-items');
+    const elementoTotal = document.querySelector('.ticket-total');
+    const btnCobrar = document.querySelector('.btn-cobrar');
+    const tarjetasProducto = document.querySelectorAll('.product-card');
+    const inputMesa = document.getElementById('input-mesa');
+
+    function actualizarInterfazTicket() {
+        if (carrito.length === 0) {
+            contenedorTicket.innerHTML = '<em>Selecciona productos para añadirlos al ticket...</em>';
+            elementoTotal.innerText = 'Total: 0.00 €';
+            return;
+        }
+
+        let html = '<ul style="list-style: none; padding: 0; text-align: left;">';
+        let total = 0;
+
+        carrito.forEach(item => {
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            html += `
+                <li style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">
+                    <span>${item.cantidad}x ${item.nombre}</span>
+                    <span>${subtotal.toFixed(2)} €</span>
+                </li>
+            `;
+        });
+
+        html += '</ul>';
+        contenedorTicket.innerHTML = html;
+        elementoTotal.innerText = `Total: ${total.toFixed(2)} €`;
+    }
+
+    tarjetasProducto.forEach(tarjeta => {
+        tarjeta.addEventListener('click', () => {
+            const nombre = tarjeta.dataset.nombre;
+            const precio = parseFloat(tarjeta.dataset.precio);
+
+            const productoExistente = carrito.find(item => item.nombre === nombre);
+
+            if (productoExistente) {
+                productoExistente.cantidad++;
+            } else {
+                carrito.push({ nombre, precio, cantidad: 1 });
+            }
+
+            actualizarInterfazTicket();
+        });
+    });
+
+    btnCobrar.addEventListener('click', () => {
+        if (carrito.length === 0) {
+            alert("El ticket está vacío. Selecciona algún producto primero.");
+            return;
+        }
+
+        const numeroMesa = inputMesa.value;
+        if (!numeroMesa) {
+            alert("❌ Por favor, introduce el número de mesa.");
+            inputMesa.focus();
+            return;
+        }
+
+        const itemsParaCocina = carrito.map(item => `${item.cantidad}x ${item.nombre}`);
+
+        const pedidoReal = {
+            mesa: numeroMesa,
+            items: itemsParaCocina,
+            estado: "Pendiente"
+        };
+
+        // Envía el pedido al servidor por la red
+        socket.emit('enviar_pedido', pedidoReal);
+        
+        carrito = [];
+        inputMesa.value = '';
+        actualizarInterfazTicket();
+        
+        const textoOriginal = btnCobrar.innerText;
+        btnCobrar.innerText = "¡Enviado a Cocina!";
+        btnCobrar.style.backgroundColor = "#059669";
+        setTimeout(() => {
+            btnCobrar.innerText = textoOriginal;
+            btnCobrar.style.backgroundColor = "#10b981";
+        }, 1500);
+    });
+</script>
+</body>
+</html>

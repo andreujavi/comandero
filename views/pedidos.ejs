@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= titulo %></title>
+    <style>
+    
+        :root {
+            --bg-dark: #1e1e24;
+            --card-bg: #2b2d42;
+            --accent-red: #d90429;
+            --accent-green: #2ec4b6;
+            --text-light: #edf2f4;
+            --text-dim: #8d99ae;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #3d405b;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-delete-all {
+            background-color: var(--accent-red);
+            color: white;
+        }
+
+        .btn-refresh {
+            background-color: var(--accent-green);
+            color: #102a43;
+        }
+
+        .grid-orders {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .order-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #3d405b;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .table-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffb703;
+        }
+
+        .order-time {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .order-items {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+        }
+
+        .order-items li {
+            padding: 6px 0;
+            border-bottom: 1px dashed #3d405b;
+            font-size: 1.05rem;
+        }
+
+        .btn-delete-single {
+            background-color: #e63946;
+            color: white;
+            width: 100%;
+            padding: 8px;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.2rem;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    
+
+   <header>
+        <h1>🍳 Cocina - GastroPOS</h1>
+        <div class="controls">
+            <button class="btn-refresh" onclick="fetchOrders()">Actualizar</button>
+            <button class="btn-delete-all" onclick="deleteAllOrders()">Borrar Todo</button>
+        </div>
+    </header>
+
+    <main class="grid-orders" id="ordersContainer">
+        <div class="empty-state">Cargando comandas...</div>
+    </main>
+
+    <script>
+        const API_URL = '/api/orders';
+
+        // Carga las comandas desde el servidor
+        async function fetchOrders() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const orders = await response.json();
+                renderOrders(orders);
+            } catch (error) {
+                console.error("Error al obtener comandas:", error);
+                document.getElementById('ordersContainer').innerHTML = 
+                    `<div class="empty-state">Error de conexión con el servidor.</div>`;
+            }
+        }
+
+        // Renderiza el listado de tarjetas en el DOM
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = '';
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div class="empty-state">Sin comandas pendientes</div>';
+                return;
+            }
+
+            orders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                
+                const itemsList = order.items.map(item => `<li>${item}</li>`).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <div class="order-header">
+                            <span class="table-name">Mesa ${order.table || 'N/A'}</span>
+                            <span class="order-time">${order.time || ''}</span>
+                        </div>
+                        <ul class="order-items">
+                            ${itemsList}
+                        </ul>
+                    </div>
+                    <button class="btn-delete-single" onclick="deleteOrder('${order.id}')">Despachar / Borrar</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Borra una comanda específica por su ID
+        async function deleteOrder(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error(`Error ${response.status}`);
+                
+                fetchOrders(); // Recargar interfaz
+            } catch (error) {
+                alert("No se pudo borrar la comanda: " + error.message);
+            }
+        }
+
+        // Borra absolutamente todas las comandas de la pantalla
+        async function deleteAllOrders() {
+            if (!confirm("¿Seguro que quieres borrar TODAS las comandas de cocina?")) return;
+
+            try {
+                const response = await fetch(`${API_URL}/all`, { method: 'DELETE' });
+                if (!response.ok) throw new Error(`Error ${response.status}`);
+
+                fetchOrders(); // Recargar interfaz
+            } catch (error) {
+                alert("Error al intentar borrar: " + error.message);
+            }
+        }
+
+        // Auto-refresco cada 5 segundos para mantener sincronizada la cocina
+        setInterval(fetchOrders, 5000);
+
+        // Carga inicial
+        fetchOrders();
+    </script>
+</body>
+</html>
