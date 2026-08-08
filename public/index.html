@@ -193,6 +193,7 @@ body {
             </section>
         </main>
     </div>
+    <script>
     // 1. Conexión automática (funciona en PC, Móvil, Red local y Render)
 const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
 
@@ -280,6 +281,8 @@ socket.on('actualizar-comandas', (comanda) => {
     // Poner arriba del todo
     listaComandas.prepend(li);
 });
+    </script>
+        
     <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="index.js"></script>
