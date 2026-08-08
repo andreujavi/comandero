@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Cristal Líquido</title>
+    <link rel="stylesheet" href="style.css">
+
+ <style>
+
+
+body {
+    background: linear-gradient(-45deg, #1a1c29, #120e29, #290a21, #0a1f29);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    min-height: 100vh;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* COMPONENTES DE CRISTAL TRANSPARENTE (GLASSMORPHISM) */
+.glass-panel, .glass-card, .glass-header {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    color: #fff;
+    padding: 12px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+}
+
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+}
+
+.glass-btn:active { transform: translateY(1px); }
+
+/* PANTALLA LOGIN */
+.login-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+}
+
+.login-card { padding: 40px; text-align: center; max-width: 450px; width: 90%; }
+.login-card h1 { font-size: 2.2rem; margin-bottom: 10px; }
+.login-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
+
+/* CONTENEDOR PRINCIPAL & GRID DE 3 ZONAS */
+.app-container { padding: 20px; max-width: 1600px; margin: 0 auto; }
+.hidden { display: none !important; }
+
+.glass-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 25px; margin-bottom: 20px;
+}
+
+.badge { background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; margin-left: 10px; }
+.estado-badge { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; background: rgba(0,0,0,0.4); }
+
+.grid-tres-zonas {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr; /* 3 Columnas principales */
+    gap: 20px;
+}
+
+.glass-panel { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+.glass-panel h2 { border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 10px; font-size: 1.3rem; }
+
+/* ZONA 1: PRODUCTOS Y CATEGORÍAS */
+.categorias-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+.cat-btn {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+    color: #ccc; padding: 8px 14px; border-radius: 12px; cursor: pointer; white-space: nowrap;
+}
+.cat-btn.active { background: rgba(255,255,255,0.25); color: #fff; border-color: rgba(255,255,255,0.4); }
+
+.productos-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px; max-height: 65vh; overflow-y: auto; padding-right: 5px;
+}
+
+.prod-card {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px; padding: 12px; text-align: center; cursor: pointer; transition: 0.2s;
+}
+.prod-card:hover { background: rgba(255,255,255,0.2); transform: scale(1.03); }
+.prod-card .icon { font-size: 1.8rem; display: block; margin-bottom: 5px; }
+.prod-card .title { font-size: 0.9rem; font-weight: 600; display: block; }
+.prod-card .price { font-size: 0.85rem; color: #a8ffca; font-weight: bold; margin-top: 5px; display: block; }
+
+
+.selector-mesas-wrapper { display: flex; align-items: center; gap: 10px; overflow-x: auto; }
+.mesas-pills { display: flex; gap: 6px; }
+.mesa-pill {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; padding: 6px 12px; border-radius: 10px; cursor: pointer;
+}
+.mesa-pill.active { background: #32cd32; border-color: #00ff00; font-weight: bold; }
+
+.ticket-papel {
+    background: #fdfdfd; color: #111; padding: 15px; border-radius: 12px;
+    font-family: 'Courier New', Courier, monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+.ticket-header { text-align: center; border-bottom: 1px dashed #444; padding-bottom: 8px; margin-bottom: 10px; }
+.ticket-items { list-style: none; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+.ticket-items li { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; }
+.ticket-totales { border-top: 1px dashed #444; padding-top: 8px; font-size: 0.9rem; text-align: right; }
+.linea-total { font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
+
+.glass-input {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; color: #fff; padding: 10px; resize: none; height: 60px;
+}
+
+.acciones-pedido { display: flex; gap: 10px; }
+.btn-print { background: rgba(0, 150, 255, 0.4); flex: 1; }
+.btn-send { background: rgba(255, 140, 0, 0.5); flex: 1.5; font-size: 1.05rem; }
+
+.comandas-grid { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto; }
+.card-comanda {
+    background: rgba(0, 0, 0, 0.35); border-left: 5px solid #00ffcc;
+    border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px;
+}
+.comanda-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; }
+.comanda-body { font-size: 1.05rem; font-weight: bold; color: #fff; }
+.comanda-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+.btn-completar { background: rgba(0, 255, 128, 0.3); border: 1px solid #00ff88; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; color: #fff; }
+
+
+@media (max-width: 1024px) {
+    .grid-tres-zonas { grid-template-columns: 1fr; } /* Pasa a 1 columna en pantallas móviles */
+    .productos-grid { max-height: 40vh; }
+}
+
+
+@media print {
+    body * { visibility: hidden; }
+    .ticket-papel, .ticket-papel * { visibility: visible; }
+    .ticket-papel { position: absolute; left: 0; top: 0; width: 80mm; background: white; color: black; box-shadow: none; }
+}
+
+
+
+.selector-mesas-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.label-mesas {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.zonas-mesas-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bloque-zona {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.titulo-zona {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    width: 60px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.mesas-pills {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    flex: 1;
+}
+
+.mesa-pill {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    text-align: center;
+}
+
+.mesa-pill:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.mesa-pill.active {
+    background: #00e676;
+    border-color: #00ff88;
+    color: #000;
+    box-shadow: 0 0 12px rgba(0, 230, 118, 0.6);
+}
+
+ </style>
+</head>
+<body>
+    <!-- Fondo dinámico con brillo -->
+    <div class="bg-animado"></div>
+
+    <!-- PANTALLA 1: SELECCIÓN DE ROL (LOGIN CRISTAL) -->
+    <div id="pantalla-login" class="login-overlay">
+        <div class="glass-card login-card">
+            <h1>🍹 GastroPOS</h1>
+            <p>Selecciona tu dispositivo para acceder:</p>
+            <div class="login-grid">
+                <button class="glass-btn role-btn" data-rol="pc">💻 Principal / Barra</button>
+                <button class="glass-btn role-btn" data-rol="cocina">🍳 Pantalla Cocina</button>
+                <button class="glass-btn role-btn" data-rol="tablet">📱 Tablet / Comandero</button>
+            </div>
+        </div>
+    </div>
+     <div class="selector-mesas-wrapper">
+                    <span class="label-mesas">Seleccionar Mesa:</span>
+                    
+                    <div class="zonas-mesas-container">
+                        <!-- ZONA BARRA -->
+                        <div class="bloque-zona">
+                            <span class="titulo-zona">Barra</span>
+                            <div class="mesas-pills">
+                                <button class="mesa-pill" data-mesa="Barra 1">B1</button>
+                                <button class="mesa-pill" data-mesa="Barra 2">B2</button>
+                                <button class="mesa-pill" data-mesa="Barra 3">B3</button>
+                                <button class="mesa-pill" data-mesa="Barra 4">B4</button>
+                                <button class="mesa-pill" data-mesa="Barra 5">B5</button>
+                            </div>
+                        </div>
+
+                        <!-- ZONA INTERIOR -->
+                        <div class="bloque-zona">
+                            <span class="titulo-zona">Interior</span>
+                            <div class="mesas-pills">
+                                <button class="mesa-pill" data-mesa="Interior 1">I1</button>
+                                <button class="mesa-pill" data-mesa="Interior 2">I2</button>
+                                <button class="mesa-pill" data-mesa="Interior 3">I3</button>
+                                <button class="mesa-pill" data-mesa="Interior 4">I4</button>
+                                <button class="mesa-pill" data-mesa="Interior 5">I5</button>
+                            </div>
+                        </div>
+
+                        <!-- ZONA EXTERIOR / TERRAZA -->
+                        <div class="bloque-zona">
+                            <span class="titulo-zona">Exterior</span>
+                            <div class="mesas-pills">
+                                <button class="mesa-pill" data-mesa="Exterior 1">E1</button>
+                                <button class="mesa-pill" data-mesa="Exterior 2">E2</button>
+                                <button class="mesa-pill" data-mesa="Exterior 3">E3</button>
+                                <button class="mesa-pill" data-mesa="Exterior 4">E4</button>
+                                <button class="mesa-pill" data-mesa="Exterior 5">E5</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    <!-- PANTALLA 2: APLICACIÓN PRINCIPAL -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Cabecera -->
+        <header class="glass-header">
+            <div class="logo-area">
+                <h1>🍹 GastroPOS</h1>
+                <span id="badge-rol" class="badge">Rol: -</span>
+            </div>
+            <div class="conexion-area">
+                <span id="estado-conexion" class="estado-badge">Conectando...</span>
+                <button id="btn-cambiar-rol" class="glass-btn btn-sm">🔄 Cambiar Rol</button>
+            </div>
+        </header>
+
+        <!-- GRID DE 3 ZONAS -->
+        <main class="grid-tres-zonas">
+
+            <!-- ZONA 1: PRODUCTOS DE BAR Y RESTAURANTE -->
+            <section class="glass-panel zona-productos">
+                <h2>🍔 Productos</h2>
+                
+                <!-- Selector de categorías -->
+                <div class="categorias-bar">
+                    <button class="cat-btn active" data-cat="todos">Todos</button>
+                    <button class="cat-btn" data-cat="cafes">☕ Cafés</button>
+                    <button class="cat-btn" data-cat="bebidas">🍺 Bebidas</button>
+                    <button class="cat-btn" data-cat="tapas">🧆 Tapas</button>
+                    <button class="cat-btn" data-cat="platos">🍳 Pl. Combinados</button>
+                    <button class="cat-btn" data-cat="postres">🍰 Postres</button>
+                </div>
+
+                <!-- Rejilla dinámica de productos -->
+                <div id="contenedor-productos" class="productos-grid"></div>
+            </section>
+
+            <!-- ZONA 2: PRECIOS Y TICKET DE COMPRA -->
+            <section class="glass-panel zona-precios">
+                <h2>📝 Pedido y Precios</h2>
+                
+                <!-- Selector de Mesas -->
+                <div class="selector-mesas-wrapper">
+                    <span>Mesa:</span>
+                    <div class="mesas-pills">
+                        <button class="mesa-pill" data-mesa="Barra 1">B1</button>
+                        <button class="mesa-pill" data-mesa="Barra 2">B2</button>
+                        <button class="mesa-pill" data-mesa="Mesa 1">M1</button>
+                        <button class="mesa-pill" data-mesa="Mesa 2">M2</button>
+                        <button class="mesa-pill" data-mesa="Terraza 1">T1</button>
+                        <button class="mesa-pill" data-mesa="Terraza 2">T2</button>
+                    </div>
+                </div>
+
+                <!-- Recibo estilo Ticket de Papel -->
+                <div class="ticket-papel">
+                    <div class="ticket-header">
+                        <h3>GASTROPOS RESTAURANTE</h3>
+                        <p id="ticket-info">Mesa: Sin seleccionar</p>
+                    </div>
+                    <ul id="lista-ticket" class="ticket-items">
+                        <!-- Productos añadidos dinámicamente -->
+                    </ul>
+                    <div class="ticket-totales">
+                        <div class="linea-subtotal">Subtotal: <span id="txt-subtotal">0.00</span>€</div>
+                        <div class="linea-iva">IVA (10%): <span id="txt-iva">0.00</span>€</div>
+                        <div class="linea-total">TOTAL: <span id="txt-total">0.00</span>€</div>
+                    </div>
+                </div>
+
+                <textarea id="nota-comanda" class="glass-input" placeholder="Notas adicionales (ej: Sin cebolla, muy hecho...)"></textarea>
+
+                <div class="acciones-pedido">
+                    <button id="btn-imprimir" class="glass-btn btn-print">🖨️ Imprimir Ticket</button>
+                    <button id="btn-enviar" class="glass-btn btn-send">🚀 Enviar Comanda</button>
+                </div>
+            </section>
+
+            <!-- ZONA 3: COMANDAS EN TIEMPO REAL (COCINA / BARRA) -->
+            <section class="glass-panel zona-comandas">
+                <h2>🔥 Comandas Activas</h2>
+                <div id="lista-comandas" class="comandas-grid">
+                    <!-- Comandas recibidas por Socket.io -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Carga de Socket.io y lógica JS -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
