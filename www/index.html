@@ -42,6 +42,12 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .header h1 { margin: 0; font-size: 1.4rem; }
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
         .estado-badge {
             font-size: 0.85rem;
             font-weight: 700;
@@ -50,6 +56,56 @@
             background: #ecfdf5;
             color: #10b981;
         }
+
+        /* Botón curioso y animado para entrar en Cocina */
+        @keyframes campana-ring {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(18deg); }
+            30% { transform: rotate(-16deg); }
+            45% { transform: rotate(12deg); }
+            60% { transform: rotate(-10deg); }
+            75% { transform: rotate(6deg); }
+        }
+        .btn-cocina-curioso {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff2e63 100%);
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.92rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 15px rgba(255, 46, 99, 0.35);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-cocina-curioso:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 22px rgba(255, 46, 99, 0.5);
+        }
+        .btn-cocina-curioso:active {
+            transform: scale(0.96);
+        }
+        .btn-cocina-curioso .icono-campana {
+            display: inline-block;
+            font-size: 1.2rem;
+            transform-origin: top center;
+            animation: campana-ring 2.4s infinite ease-in-out;
+        }
+        .btn-cocina-curioso .badge-vivo {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
         .layout {
             max-width: 1200px;
             margin: 0 auto;
@@ -213,7 +269,14 @@
 
     <div class="header">
         <h1>📱 GastroPOS - Comandero</h1>
-        <span id="estado-conexion" class="estado-badge">⏳ Conectando con Render...</span>
+        <div class="header-actions">
+          <a href="cocina.html" class="btn-cocina-curioso" title="Abrir monitor de Cocina y Barra">
+              <span class="icono-campana">🔔</span>
+              <span>¡Oído Cocina!</span>
+              <span class="badge-vivo">Ver Pantalla →</span>
+          </a>
+            <span id="estado-conexion" class="estado-badge">⏳ Conectando con Render...</span>
+        </div>
     </div>
 
     <div class="layout">
@@ -406,7 +469,6 @@
                 return;
             }
 
-            // Separamos los artículos de Barra y de Cocina para que cada pantalla reciba lo suyo con su precio
             const itemsBarra = carrito.filter(i => i.tipo === 'barra');
             const itemsCocina = carrito.filter(i => i.tipo !== 'barra');
 
