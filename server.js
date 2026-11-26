@@ -13,10 +13,10 @@ const app = express();
 // Puerto dinámico obligatorio para Render
 const PORT = process.env.PORT || 10000;
 
-// 1. Habilitar CORS abierto para evitar bloqueos desde APK, Electron o distintos subdominios
+// 1. Habilitar CORS abierto para evitar bloqueos desde APK, Electron o distintos dominios
 app.use(cors({
     origin: '*',
-    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -70,40 +70,65 @@ function guardarBaseDatos(data) {
 }
 
 // =========================================================================
-// ENDPOINTS DE PEDIDOS (COMANDAS)
+// ENDPOINTS DE PEDIDOS (COMANDAS) - COMPATIBLE CON CUALQUIER FORMATO
 // =========================================================================
 
 // Obtener todos los pedidos activos
-app.get('/api/pedidos', (req, res) => {
+app.get(['/api/pedidos', '/api/pedido'], (req, res) => {
     const db = leerBaseDatos();
     res.json(db.pedidos);
 });
 
-// Crear un nuevo pedido desde index.html
-app.post('/api/pedidos', (req, res) => {
-    const { mesa_id, tipo, detalles } = req.body;
+// Crear un nuevo pedido (acepta { mesa_id, detalles } o { mesa, carrito/productos/items })
+app.post(['/api/pedidos', '/api/pedido'], (req, res) => {
+    const body = req.body || {};
 
-    if (!mesa_id || !detalles) {
-        return res.status(400).json({ error: 'Faltan datos obligatorios (mesa_id o detalles).' });
+    // Detectar número o nombre de mesa en cualquiera de sus variantes
+    const mesa = body.mesa_id ?? body.mesa ?? body.numeroMesa ?? '1';
+
+    // Detectar artículos enviados como texto (detalles) o como lista/carrito
+    let detallesTexto = '';
+    const listaArticulos = body.carrito || body.productos || body.items || body.articulos;
+
+    if (typeof body.detalles === 'string' && body.detalles.trim() !== '') {
+        detallesTexto = body.detalles.trim();
+    } else if (Array.isArray(listaArticulos) && listaArticulos.length > 0) {
+        detallesTexto = listaArticulos.map(item => {
+            if (typeof item === 'string') return item;
+            const cant = item.cantidad || item.qty || item.unidades || 1;
+            const nombre = item.nombre || item.name || item.producto || item.title || 'Artículo';
+            const nota = item.nota || item.observaciones ? ` (${item.nota || item.observaciones})` : '';
+            return `${cant}x ${nombre}${nota}`;
+        }).join(', ');
+    } else if (body.producto || body.articulo || body.nombre) {
+        const cant = body.cantidad || 1;
+        const nombre = body.producto || body.articulo || body.nombre;
+        detallesTexto = `${cant}x ${nombre}`;
+    }
+
+    if (!detallesTexto) {
+        return res.status(400).json({ error: 'No se recibieron artículos o detalles en el pedido.' });
     }
 
     const db = leerBaseDatos();
     const nuevoPedido = {
         id: Date.now(),
-        mesa_id: String(mesa_id),
-        tipo: tipo || 'comida',
-        detalles: String(detalles).trim(),
+        mesa_id: String(mesa),
+        mesa: String(mesa),
+        tipo: body.tipo || body.seccion || 'comida',
+        detalles: detallesTexto,
+        items: Array.isArray(listaArticulos) ? listaArticulos : [],
         created_at: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     };
 
     db.pedidos.push(nuevoPedido);
     guardarBaseDatos(db);
 
-    res.status(201).json({ mensaje: 'Pedido registrado', pedido: nuevoPedido });
+    res.status(201).json({ ok: true, mensaje: 'Pedido registrado', pedido: nuevoPedido });
 });
 
 // Borrar un pedido individual al pulsar "Servido" en cocina.html
-app.delete('/api/pedidos/:id', (req, res) => {
+app.delete(['/api/pedidos/:id', '/api/pedido/:id'], (req, res) => {
     const idBuscado = req.params.id;
     const db = leerBaseDatos();
     const longitudInicial = db.pedidos.length;
@@ -115,7 +140,7 @@ app.delete('/api/pedidos/:id', (req, res) => {
     }
 
     guardarBaseDatos(db);
-    res.json({ mensaje: 'Pedido eliminado correctamente', id: idBuscado });
+    res.json({ ok: true, mensaje: 'Pedido eliminado correctamente', id: idBuscado });
 });
 
 // =========================================================================
