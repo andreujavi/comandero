@@ -68,5 +68,3 @@ app.delete('/api/pedidos/:id', (req, res) => {
     }
 });
 const PORT = process.env.PORT || 10000;});
-
-});
