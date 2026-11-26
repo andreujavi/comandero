@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -10,8 +11,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 const DB_FILE = path.join(__dirname, 'database.json');
-
-app.use(cors());
+const res = await fetch(`${URL_SERVIDOR}/api/pedidos`);
+import cors from 'cors';
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.static(__dirname));
 
