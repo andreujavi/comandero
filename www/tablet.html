@@ -183,20 +183,17 @@
         let carrito = []; // Almacenará objetos { nombre, precio }
 
         const configuracionICE = {
-            iceServers: [
-                // 1. Servidores STUN públicos y gratuitos (Google y Cloudflare)
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
-
-                // 2. Servidor TURN (ExpressTURN)
-                {
-                    urls: 'turn:free.expressturn.com:3478',
-                    username: '000000002102154901',
-                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                },
-            ]
-        };
+         iceServers: [
+             { urls: 'stun:stun.l.google.com:19302' },
+             { urls: 'stun:stun1.l.google.com:19302' },
+             { urls: 'stun:stun.cloudflare.com:3478' },
+             {
+                 urls: 'turn:free.expressturn.com:3478',
+                 username: '000000002102154901',
+                 credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+             }
+         ]
+     };
 
         const peerConnection = new RTCPeerConnection(configuracionICE);
         function cambiarZona(zonaId) {
