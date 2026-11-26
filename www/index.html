@@ -430,7 +430,7 @@
 
                     let html = '';
                     data.pedidos.forEach(p => {
-                        html += `
+                        html + =  '';
                             <div class="pedido-card">
                                 <div>
                                     <div class="pedido-header">
@@ -441,7 +441,7 @@
                                 </div>
                                 <button class="btn-completar" onclick="completarPedido(${p.id})">✔ Servido / Borrar</button>
                             </div>
-                        `;
+                        
                     });
                     contenedor.innerHTML = html;
                 }

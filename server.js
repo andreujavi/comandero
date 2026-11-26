@@ -79,8 +79,8 @@ app.get(['/api/pedidos', '/api/pedido'], (req, res) => {
     res.json(db.pedidos);
 });
 
-// Crear un nuevo pedido (acepta { mesa_id, detalles } o { mesa, carrito/productos/items })
-app.post(['/api/pedidos', '/api/pedido'], (req, res) => {
+// Crear un nuevo pedido (acepta POST tanto en '/' como en '/api/pedidos' o '/api/pedido')
+app.post(['/', '/api/pedidos', '/api/pedido'], (req, res) => {
     const body = req.body || {};
 
     // Detectar número o nombre de mesa en cualquiera de sus variantes
