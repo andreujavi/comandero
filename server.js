@@ -26,6 +26,22 @@ app.use(express.json());
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'www')));
 
+// Evitar error 404 en consola cuando el navegador pide /favicon.ico
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Ruta principal explícita para servir index.html sin errores 404
+app.get('/', (req, res) => {
+    const rutaRaiz = path.join(__dirname, 'index.html');
+    const rutaWww = path.join(__dirname, 'www', 'index.html');
+    if (fs.existsSync(rutaRaiz)) {
+        return res.sendFile(rutaRaiz);
+    }
+    if (fs.existsSync(rutaWww)) {
+        return res.sendFile(rutaWww);
+    }
+    res.status(404).send('No se encontró index.html en el servidor.');
+});
+
 // Archivo JSON local para persistencia de comandas
 const DB_FILE = path.join(__dirname, 'database.json');
 
