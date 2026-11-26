@@ -285,11 +285,11 @@
                     urls: 'turn:free.expressturn.com:3478',
                     username: '000000002102154901',
                     credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                }
+                },
             ]
         };
 
-        const peerConnection = new RTCPeerConnection(configuracionICE);;
+        const peerConnection = new RTCPeerConnection(configuracionICE);
         function cambiarZona(zonaId) {
             document.querySelectorAll('.zona-contenido').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
