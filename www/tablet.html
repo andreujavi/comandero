@@ -178,141 +178,250 @@
     </div>
 
     <script>
-    // ✅ Usa la nueva URL de Render (o déjala vacía '' para usar siempre el mismo servidor)
-    const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
-        let carrito = []; // Almacenará objetos { nombre, precio }
+    
+        // =========================================================================
+        // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
+        // =========================================================================
+        const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
 
         const configuracionICE = {
-         iceServers: [
-             { urls: 'stun:stun.l.google.com:19302' },
-             { urls: 'stun:stun1.l.google.com:19302' },
-             { urls: 'stun:stun.cloudflare.com:3478' },
-             {
-                 urls: 'turn:free.expressturn.com:3478',
-                 username: '000000002102154901',
-                 credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-             }
-         ]
-     };
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                {
+                    urls: 'turn:free.expressturn.com:3478',
+                    username: '000000002102154901',
+                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
 
-        const peerConnection = new RTCPeerConnection(configuracionICE);
-        function cambiarZona(zonaId) {
-            document.querySelectorAll('.zona-contenido').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        // =========================================================================
+        // 2. ESTADO DEL CARRITO Y GESTIÓN DE ARTÍCULOS
+        // =========================================================================
+        let carrito = [];
 
-            document.getElementById(zonaId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        // Añadir plato estándar
-        function agregarAlCarrito(nombrePlato) {
-            carrito.push(nombrePlato);
-            actualizarVistaCarrito();
-        }
-
-        // Añadir producto escrito manualmente desde el input
-        function agregarProductoPersonalizado() {
-            const input = document.getElementById('input-custom-plato');
-            const texto = input.value.trim();
-            if (!texto) {
-                alert("⚠️ Escribe el nombre del producto personalizado.");
-                return;
+        // Añade un producto al carrito desde los botones del menú
+        function agregarAlCarrito(nombre, precio = 0, tipo = 'comida') {
+            try {
+                const existente = carrito.find(item => item.nombre === nombre);
+                if (existente) {
+                    existente.cantidad += 1;
+                } else {
+                    carrito.push({
+                        nombre: nombre,
+                        precio: Number(precio) || 0,
+                        cantidad: 1,
+                        tipo: tipo
+                    });
+                }
+                actualizarVistaCarrito();
+            } catch (error) {
+                console.error('Error al agregar al carrito:', error);
             }
-            carrito.push(texto);
-            input.value = ""; // Limpiar input
+        }
+
+        // Elimina o resta una unidad de un producto del carrito
+        function quitarDelCarrito(index) {
+            if (index < 0 || index >= carrito.length) return;
+            if (carrito[index].cantidad > 1) {
+                carrito[index].cantidad -= 1;
+            } else {
+                carrito.splice(index, 1);
+            }
             actualizarVistaCarrito();
         }
 
-        // Actualizar lista visual
+        // Vacía el carrito actual
+        function limpiarCarrito() {
+            carrito = [];
+            actualizarVistaCarrito();
+        }
+
+        // Dibuja la lista de artículos seleccionados y el total en pantalla
         function actualizarVistaCarrito() {
-            const contenedor = document.getElementById('lista-carrito');
+            const listaEl = document.getElementById('carrito-lista') || document.getElementById('lista-carrito');
+            const totalEl = document.getElementById('carrito-total') || document.getElementById('total-carrito');
+
+            if (!listaEl) return;
+
             if (carrito.length === 0) {
-                contenedor.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">Sin productos añadidos...</p>';
+                listaEl.innerHTML = '<div style="color: #888; text-align: center; padding: 10px;">No hay artículos seleccionados</div>';
+                if (totalEl) totalEl.innerText = '0.00 €';
                 return;
             }
 
-            let html = "";
-            carrito.forEach((plato, index) => {
+            let html = '';
+            let total = 0;
+
+            carrito.forEach((item, idx) => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
                 html += `
-                    <div class="carrito-item">
-                        <span>• ${plato}</span>
-                        <button class="btn-eliminar" onclick="eliminarItem(${index})">✕</button>
+                    <div class="carrito-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee;">
+                        <span><strong>${item.cantidad}x</strong> ${item.nombre}</span>
+                        <div>
+                            <span style="margin-right:8px;">${subtotal.toFixed(2)} €</span>
+                            <button type="button" onclick="quitarDelCarrito(${idx})" style="background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 8px; cursor:pointer;">-</button>
+                        </div>
                     </div>
                 `;
             });
-            contenedor.innerHTML = html;
+
+            listaEl.innerHTML = html;
+            if (totalEl) totalEl.innerText = `${total.toFixed(2)} €`;
         }
 
-        // Eliminar producto individual
-        function eliminarItem(index) {
-            carrito.splice(index, 1);
-            actualizarVistaCarrito();
-        }
+        // =========================================================================
+        // 3. ENVÍO DE COMANDAS AL SERVIDOR RENDER (/api/pedidos)
+        // =========================================================================
+        async function enviarComanda() {
+            const inputMesa = document.getElementById('mesa') || document.getElementById('mesa-id') || document.getElementById('numero-mesa');
+            const selectTipo = document.getElementById('tipo') || document.getElementById('seccion');
+            const inputNotas = document.getElementById('notas') || document.getElementById('observaciones') || document.getElementById('detalles');
 
-        // Mostrar ticket visual flotante en pantalla
-        function mostrarTicketPantalla() {
-            if (carrito.length === 0) {
-                alert("⚠️ No hay productos en el ticket para mostrar.");
+            const mesa = inputMesa ? inputMesa.value.trim() : '1';
+            const tipo = selectTipo ? selectTipo.value : 'comida';
+            const notasExtra = inputNotas ? inputNotas.value.trim() : '';
+
+            if (carrito.length === 0 && !notasExtra) {
+                mostrarAviso('⚠️ Añade al menos un artículo antes de enviar la comanda.', '#f59e0b');
                 return;
             }
 
-            const mesa = document.getElementById('select-mesa').value;
-            const horaActual = new Date().toLocaleTimeString();
-
-            document.getElementById('ticket-modal-mesa').innerText = mesa;
-            document.getElementById('ticket-modal-hora').innerText = horaActual;
-
-            let htmlItems = "";
-            carrito.forEach(item => {
-                htmlItems += `<div>- ${item}</div>`;
-            });
-            document.getElementById('ticket-modal-items').innerHTML = htmlItems;
-
-            document.getElementById('modal-ticket').style.display = 'flex';
-        }
-
-        // Cerrar visor de ticket
-        function cerrarTicketPantalla() {
-            document.getElementById('modal-ticket').style.display = 'none';
-        }
-
-        // Enviar pedido al PC
-        async function enviarPedidoReal() {
-            if (carrito.length === 0) {
-                alert("⚠️ Selecciona al menos un producto antes de enviar.");
-                return;
-            }
-
-            const mesa = document.getElementById('select-mesa').value;
-            const detallesTexto = carrito.join(", ");
-
-            const datosComanda = {
-                mesa_id: mesa,
-                detalles: detallesTexto
-            };
+            // Formatear detalles legibles para el panel de cocina y barra
+            const resumenArticulos = carrito.map(item => `${item.cantidad}x ${item.nombre}`).join(', ');
+            const detallesFinales = notasExtra
+                ? (resumenArticulos ? `${resumenArticulos} | Nota: ${notasExtra}` : notasExtra)
+                : resumenArticulos;
 
             try {
-                const response = await fetch(URL_SERVIDOR, {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosComanda)
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mesa_id: mesa || '1',
+                        tipo: tipo,
+                        detalles: detallesFinales,
+                        carrito: carrito
+                    })
                 });
 
-                const resultado = await response.json();
+                const data = await response.json();
 
-                if (resultado.success) {
-                    alert("✅ ¡Comanda enviada a cocina correctamente!");
-                    carrito = [];
-                    actualizarVistaCarrito();
+                if (response.ok && (data.ok || data.success)) {
+                    limpiarCarrito();
+                    if (inputNotas) inputNotas.value = '';
+                    mostrarAviso('✅ Comanda enviada correctamente a cocina/barra.', '#10b981');
+                    cargarPedidosAdmin();
                 } else {
-                    alert("❌ Error al procesar la comanda en el servidor.");
+                    mostrarAviso('❌ El servidor rechazó el pedido: ' + (data.error || 'Error desconocido'), '#ef4444');
                 }
-
-            } catch (error) {
-                console.error("Error de red:", error);
-                alert("❌ Error: No se puede conectar con el PC. Revisa la IP o el Firewall.");
+            } catch (err) {
+                console.error('Error de red al enviar comanda:', err);
+                mostrarAviso('❌ Error de red con el servidor. Comprueba tu conexión.', '#ef4444');
             }
         }
+
+        // =========================================================================
+        // 4. CARGA Y BORRADO DE PEDIDOS PENDIENTES EN TIEMPO REAL
+        // =========================================================================
+        async function cargarPedidosAdmin() {
+            const contenedor = document.getElementById('lista-pedidos');
+            const estado = document.getElementById('estado-conexion');
+
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
+                const data = await response.json();
+
+                // Soporta tanto array directo [...] como objeto { pedidos: [...] }
+                const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
+
+                if (estado) {
+                    estado.innerText = '🟢 Sincronizado';
+                    estado.style.color = '#4CAF50';
+                }
+
+                if (!contenedor) return;
+
+                if (pedidos.length === 0) {
+                    contenedor.innerHTML = '<span style="color: #666; font-size: 0.9rem;">No hay comandas pendientes.</span>';
+                    return;
+                }
+
+                let html = '';
+                pedidos.forEach(p => {
+                    const hora = p.created_at || (p.fecha ? p.fecha.slice(11, 16) : '');
+                    html += `
+                        <div class="pedido-card">
+                            <div>
+                                <div class="pedido-header">
+                                    <span class="pedido-mesa">📍 Mesa ${p.mesa_id}</span>
+                                    <span class="pedido-hora">🕒 ${hora}</span>
+                                </div>
+                                <div class="pedido-detalles">${p.detalles}</div>
+                            </div>
+                            <button type="button" class="btn-completar" onclick="completarPedido('${p.id}')">✔ Servido / Borrar</button>
+                        </div>
+                    `;
+                });
+                contenedor.innerHTML = html;
+            } catch (error) {
+                console.error('Error al cargar pedidos:', error);
+                if (estado) {
+                    estado.innerText = '❌ Desconectado';
+                    estado.style.color = '#f44336';
+                }
+            }
+        }
+
+        // Elimina una comanda ya servida en el servidor
+        async function completarPedido(id) {
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    cargarPedidosAdmin();
+                } else {
+                    mostrarAviso('⚠️ No se pudo eliminar el pedido.', '#f59e0b');
+                }
+            } catch (error) {
+                console.error('Error al borrar pedido:', error);
+                mostrarAviso('❌ Error de red al borrar el pedido.', '#ef4444');
+            }
+        }
+
+        // Muestra notificaciones visuales no bloqueantes en pantalla
+        function mostrarAviso(texto, colorFondo = '#333') {
+            let banner = document.getElementById('aviso-gastropos');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'aviso-gastropos';
+                banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
+                document.body.appendChild(banner);
+            }
+            banner.style.backgroundColor = colorFondo;
+            banner.innerText = texto;
+            banner.style.opacity = '1';
+            clearTimeout(banner._timer);
+            banner._timer = setTimeout(() => {
+                banner.style.opacity = '0';
+            }, 3500);
+        }
+
+        // =========================================================================
+        // 5. INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA PÁGINA
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarVistaCarrito();
+            cargarPedidosAdmin();
+            setInterval(cargarPedidosAdmin, 4000);
+        });
     </script>
 </body>
 </html>

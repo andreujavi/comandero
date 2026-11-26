@@ -82,150 +82,148 @@
     </div>
 
     <script>
-    // ✅ Usa la nueva URL de Render (o déjala vacía '' para usar siempre el mismo servidor)
-    const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
-        let carrito = []; // Almacenará objetos { nombre, precio }
+        // =========================================================================
+        // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
+        // =========================================================================
+        const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
 
         const configuracionICE = {
             iceServers: [
-                // 1. Servidores STUN públicos y gratuitos (Google y Cloudflare)
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun.cloudflare.com:3478' },
-
-                // 2. Servidor TURN (ExpressTURN)
                 {
                     urls: 'turn:free.expressturn.com:3478',
                     username: '000000002102154901',
                     credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                },
-            ]
+                }
+            ],
+            iceCandidatePoolSize: 10
         };
 
-        const peerConnection = new RTCPeerConnection(configuracionICE);
-  function parseNumero(valor, fallback = 0) {
-    if (typeof valor === 'number') return Number.isFinite(valor) ? valor : fallback;
-    const normalizado = String(valor ?? '').trim().replace(',', '.');
-    const num = Number(normalizado);
-    return Number.isFinite(num) ? num : fallback;
-  }
+        // =========================================================================
+        // 2. OBTENER Y PINTAR COMANDAS EN TIEMPO REAL (BARRA Y COCINA)
+        // =========================================================================
+        async function cargarComandasCocina() {
+            const divBarra = document.getElementById('lista-barra');
+            const divCocina = document.getElementById('lista-cocina');
+            const estadoEl = document.getElementById('estado-conexion');
 
-  function recolectarYValidarComanda() {
-    const mesaInput = document.getElementById('mesa');
-    const mesa = (mesaInput?.value || '').trim();
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
+                const data = await response.json();
 
-    if (!mesa) {
-      return { ok: false, error: 'Falta indicar la mesa o barra.' };
-    }
+                // Soporta tanto array directo [...] como { pedidos: [...] }
+                const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
 
-    const filas = [...document.querySelectorAll('#items-container .item-row')];
-    const items = filas
-      .map((row, idx) => {
-        const nombre = (row.querySelector('.item-nombre')?.value || '').trim();
-        const cantidadRaw = row.querySelector('.item-cantidad')?.value;
-        const precioRaw = row.querySelector('.item-precio')?.value;
+                if (estadoEl) {
+                    estadoEl.textContent = '🟢 Conectado en Tiempo Real';
+                    estadoEl.style.color = '#10b981';
+                    estadoEl.style.background = '#ecfdf5';
+                }
 
-        const cantidad = Math.max(1, Math.round(parseNumero(cantidadRaw, 1)));
-        const precio = Math.max(0, parseNumero(precioRaw, 0));
+                if (!divBarra || !divCocina) return;
 
-        return { fila: idx + 1, nombre, cantidad, precio };
-      })
-      .filter((item) => item.nombre.length > 0);
+                let htmlBarra = '';
+                let htmlCocina = '';
 
-    if (items.length === 0) {
-      return { ok: false, error: 'Añade al menos un producto con nombre antes de enviar.' };
-    }
+                pedidos.forEach(pedido => {
+                    const texto = (pedido.detalles || '').toLowerCase();
+                    const hora = pedido.created_at || (pedido.fecha ? pedido.fecha.slice(11, 16) : '');
+                    const idCorto = String(pedido.id).slice(-4);
 
-    const itemInvalido = items.find((it) => Number.isNaN(it.cantidad) || Number.isNaN(it.precio));
-    if (itemInvalido) {
-      return {
-        ok: false,
-        error: `Revisa cantidad o precio en la línea ${itemInvalido.fila} ("${itemInvalido.nombre}").`,
-      };
-    }
+                    // Detectar si corresponde a Barra o Cocina
+                    const esBarra = pedido.tipo === 'barra' ||
+                                    pedido.tipo === 'bebida' ||
+                                    texto.includes('bebida') ||
+                                    texto.includes('agua') ||
+                                    texto.includes('refresco') ||
+                                    texto.includes('cerveza') ||
+                                    texto.includes('copa') ||
+                                    texto.includes('vino') ||
+                                    texto.includes('café') ||
+                                    texto.includes('cafe');
 
-    const payloadItems = items.map(({ nombre, cantidad, precio }) => ({
-      nombre,
-      cantidad,
-      precio,
-    }));
+                    const tarjetaHTML = `
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
+                                <span>#${idCorto}</span>
+                            </div>
+                            <div class="card-body">${pedido.detalles}</div>
+                            <div class="card-footer">
+                                <span>🕒 ${hora}</span>
+                                <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
+                            </div>
+                        </div>
+                    `;
 
-    const total = Number(
-      payloadItems.reduce((acc, it) => acc + it.cantidad * it.precio, 0).toFixed(2)
-    );
+                    if (esBarra) {
+                        htmlBarra += tarjetaHTML;
+                    } else {
+                        htmlCocina += tarjetaHTML;
+                    }
+                });
 
-    return {
-      ok: true,
-      payload: {
-        mesa,
-        items: payloadItems,
-        total,
-        estado: 'pendiente',
-      },
-    };
-  }
+                divBarra.innerHTML = htmlBarra || '<p class="empty-column">No hay pedidos pendientes en barra</p>';
+                divCocina.innerHTML = htmlCocina || '<p class="empty-column">No hay pedidos pendientes en cocina</p>';
 
-  async function enviarComanda(e) {
-    e.preventDefault();
-    const mensajeEl = document.getElementById('mensaje-form');
-    const btnSubmit = e.currentTarget.querySelector('button[type="submit"]');
+            } catch (error) {
+                console.error('Error al conectar con Render:', error);
+                if (estadoEl) {
+                    estadoEl.textContent = '🔴 Sin conexión con el servidor';
+                    estadoEl.style.color = '#ef4444';
+                    estadoEl.style.background = '#fef2f2';
+                }
+            }
+        }
 
-    const validacion = recolectarYValidarComanda();
-    if (!validacion.ok) {
-      if (mensajeEl) mensajeEl.textContent = `Validación: ${validacion.error}`;
-      console.warn('[GastroPOS] Validación fallida:', validacion.error);
-      return;
-    }
+        // =========================================================================
+        // 3. BORRAR UNA COMANDA AL PULSAR "SERVIDO"
+        // =========================================================================
+        async function marcarServido(id) {
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
+                    method: 'DELETE'
+                });
 
-    const url = '/api/pedidos';
-    const payload = validacion.payload;
+                if (response.ok) {
+                    mostrarAviso('✅ Comanda marcada como servida.', '#10b981');
+                    cargarComandasCocina();
+                } else {
+                    mostrarAviso('⚠️ No se pudo retirar la comanda.', '#f59e0b');
+                }
+            } catch (error) {
+                console.error('Error al eliminar comanda:', error);
+                mostrarAviso('❌ Error de red al retirar la comanda.', '#ef4444');
+            }
+        }
 
-    if (btnSubmit) btnSubmit.disabled = true;
-    if (mensajeEl) mensajeEl.textContent = 'Enviando comanda...';
+        // Notificación visual flotante (sin bloquear pantalla)
+        function mostrarAviso(texto, colorFondo = '#333') {
+            let banner = document.getElementById('aviso-cocina');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'aviso-cocina';
+                banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
+                document.body.appendChild(banner);
+            }
+            banner.style.backgroundColor = colorFondo;
+            banner.textContent = texto;
+            banner.style.opacity = '1';
+            clearTimeout(banner._timer);
+            banner._timer = setTimeout(() => {
+                banner.style.opacity = '0';
+            }, 3000);
+        }
 
-    console.group('[GastroPOS] POST /api/pedidos');
-    console.log('URL:', url);
-    console.log('Payload:', payload);
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const textoRespuesta = await res.text();
-      let data = null;
-      try {
-        data = textoRespuesta ? JSON.parse(textoRespuesta) : null;
-      } catch {
-        data = null;
-      }
-
-      console.log('Status HTTP:', res.status, res.statusText);
-      console.log('Respuesta cruda:', textoRespuesta);
-      console.groupEnd();
-
-      if (!res.ok || !data?.ok) {
-        const detalleServidor =
-          data?.error || data?.message || textoRespuesta || `Error HTTP ${res.status}`;
-        throw new Error(`[HTTP ${res.status}] ${detalleServidor}`);
-      }
-
-      if (mensajeEl) {
-        mensajeEl.textContent = `Comanda #${data.pedido?.id ?? ''} guardada (${payload.mesa}).`;
-      }
-      cargarPedidos();
-    } catch (err) {
-      console.error('[GastroPOS] Error al enviar comanda:', err);
-      console.groupEnd?.();
-      if (mensajeEl) {
-        mensajeEl.textContent = `Error al enviar comanda: ${err.message}`;
-      }
-    } finally {
-      if (btnSubmit) btnSubmit.disabled = false;
-    }
-
+        // =========================================================================
+        // 4. INICIAR SINCRONIZACIÓN AUTOMÁTICA CADA 3 SEGUNDOS
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarComandasCocina();
+            setInterval(cargarComandasCocina, 3000);
+        });
     </script>
 
 </body>
