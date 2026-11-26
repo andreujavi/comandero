@@ -13,6 +13,7 @@
             --primary: #2563eb;
             --success: #10b981;
             --success-hover: #059669;
+            --warning: #f59e0b;
             --border: #e2e8f0;
             --radius-lg: 16px;
             --radius-md: 10px;
@@ -42,9 +43,25 @@
             gap: 12px;
             border-bottom: 2px solid var(--border);
             padding-bottom: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .header h1 { margin: 0; font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
+        .header-right {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-volver {
+            text-decoration: none;
+            background: #eff6ff;
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
         .estado-conexion {
             font-size: 0.85rem;
             font-weight: 700;
@@ -53,6 +70,44 @@
             background: #ecfdf5;
             color: #10b981;
         }
+
+        /* Barra resumen de importes activos en cada mesa / taburete */
+        .resumen-sitios {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 15px;
+            margin-bottom: 18px;
+        }
+        .resumen-sitios-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+        .chips-sitios {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .chip-sitio {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .chip-sitio.con-pedido {
+            background: #fffbeb;
+            border-color: var(--warning);
+            color: #b45309;
+        }
+
         .columns-wrapper {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -100,8 +155,15 @@
             border-radius: 6px;
             font-size: 0.95rem;
         }
+        .badge-precio-card {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
         .card-body {
-            font-size: 1rem;
+            font-size: 0.98rem;
             font-weight: 600;
             color: #1e293b;
             line-height: 1.5;
@@ -138,7 +200,19 @@
     <div class="container">
         <div class="header">
             <h1>👨‍🍳 Panel de Cocina y Barra (Tiempo Real)</h1>
-            <div id="estado-conexion" class="estado-conexion">⏳ Conectando con Render...</div>
+            <div class="header-right">
+                <a href="index.html" class="btn-volver">← Volver a Comandero</a>
+                <div id="estado-conexion" class="estado-conexion">⏳ Conectando con Render...</div>
+            </div>
+        </div>
+
+        <!-- RESUMEN DE PRECIOS EN CADA UNA DE LAS 6 MESAS INT, 6 EXT Y 5 TABURETES -->
+        <div class="resumen-sitios">
+            <div class="resumen-sitios-header">
+                <span>💶 Estado de Cuenta por Sitio (6 Interiores · 6 Exteriores · 5 Taburetes)</span>
+                <span id="total-general-cocina" style="color:#2563eb;">Total Activo: 0,00 €</span>
+            </div>
+            <div id="chips-sitios" class="chips-sitios"></div>
         </div>
 
         <div class="columns-wrapper">
@@ -170,10 +244,32 @@
             iceCandidatePoolSize: 10
         };
 
+        const SITIOS_SALA = [
+            'Interior - Mesa 1', 'Interior - Mesa 2', 'Interior - Mesa 3',
+            'Interior - Mesa 4', 'Interior - Mesa 5', 'Interior - Mesa 6',
+            'Exterior - Mesa 1', 'Exterior - Mesa 2', 'Exterior - Mesa 3',
+            'Exterior - Mesa 4', 'Exterior - Mesa 5', 'Exterior - Mesa 6',
+            'Barra - Taburete 1', 'Barra - Taburete 2', 'Barra - Taburete 3',
+            'Barra - Taburete 4', 'Barra - Taburete 5'
+        ];
+
+        function obtenerImportePedido(pedido) {
+            if (Array.isArray(pedido.items) && pedido.items.length > 0) {
+                return pedido.items.reduce((acc, it) => acc + ((Number(it.precio) || 0) * (Number(it.cantidad) || 1)), 0);
+            }
+            const texto = String(pedido.detalles || '');
+            const matchTotal = texto.match(/Total:\s*([\d.,]+)\s*€/i);
+            if (matchTotal) {
+                return parseFloat(matchTotal[1].replace(',', '.')) || 0;
+            }
+            return 0;
+        }
+
         async function cargarComandasCocina() {
             const divBarra = document.getElementById('lista-barra');
             const divCocina = document.getElementById('lista-cocina');
             const estadoEl = document.getElementById('estado-conexion');
+            const chipsEl = document.getElementById('chips-sitios');
 
             try {
                 const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
@@ -184,11 +280,30 @@
                 estadoEl.style.color = '#10b981';
                 estadoEl.style.background = '#ecfdf5';
 
+                // Calcular totales acumulados en cada uno de los 17 puestos
+                const totalesSitio = {};
+                let sumaGlobal = 0;
+
+                pedidos.forEach(p => {
+                    const sitio = String(p.mesa_id || '');
+                    const imp = obtenerImportePedido(p);
+                    totalesSitio[sitio] = (totalesSitio[sitio] || 0) + imp;
+                    sumaGlobal += imp;
+                });
+
+                document.getElementById('total-general-cocina').textContent = `Total Activo: ${sumaGlobal.toFixed(2)} €`;
+                chipsEl.innerHTML = SITIOS_SALA.map(sitio => {
+                    const imp = totalesSitio[sitio] || 0;
+                    const nombreCorto = sitio.replace('Interior - ', 'Int. ').replace('Exterior - ', 'Ext. ').replace('Barra - ', '');
+                    return `<span class="chip-sitio ${imp > 0 ? 'con-pedido' : ''}">${nombreCorto}: <strong>${imp.toFixed(2)} €</strong></span>`;
+                }).join('');
+
                 let htmlBarra = '';
                 let htmlCocina = '';
 
                 pedidos.forEach(pedido => {
                     const texto = (pedido.detalles || '').toLowerCase();
+                    const importeCard = obtenerImportePedido(pedido);
                     const esBarra = pedido.tipo === 'barra' ||
                                     pedido.tipo === 'bebida' ||
                                     texto.includes('cerveza') ||
@@ -201,13 +316,13 @@
                     const tarjeta = `
                         <div class="card">
                             <div class="card-header">
-                                <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
-                                <span>#${String(pedido.id).slice(-4)}</span>
+                                <span class="badge-mesa">📍 ${pedido.mesa_id}</span>
+                                <span class="badge-precio-card">${importeCard.toFixed(2)} €</span>
                             </div>
                             <div class="card-body">${pedido.detalles}</div>
                             <div class="card-footer">
-                                <span>🕒 ${pedido.created_at || ''}</span>
-                                <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
+                                <span>🕒 ${pedido.created_at || ''} · #${String(pedido.id).slice(-4)}</span>
+                                <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido / Cobrado</button>
                             </div>
                         </div>
                     `;
