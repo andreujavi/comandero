@@ -1,4 +1,3 @@
-i@@ -1,160 +1,176 @@
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
@@ -11,10 +10,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Puerto dinámico obligatorio para Render (evita duplicados y error SIGTERM)
+// Puerto dinámico obligatorio para Render
 const PORT = process.env.PORT || 10000;
 
-// 1. Habilitar CORS abierto para evitar bloqueos desde APK, Electron o distintos subdominios de Render
+// 1. Habilitar CORS abierto para evitar bloqueos desde APK, Electron o distintos subdominios
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
@@ -90,7 +89,7 @@ app.post('/api/pedidos', (req, res) => {
 
     const db = leerBaseDatos();
     const nuevoPedido = {
-        id: Date.now(), // ID único numérico
+        id: Date.now(),
         mesa_id: String(mesa_id),
         tipo: tipo || 'comida',
         detalles: String(detalles).trim(),
@@ -175,3 +174,4 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor GastroPOS activo en http://0.0.0.0:${PORT}`);
+});
