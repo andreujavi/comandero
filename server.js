@@ -1,3 +1,4 @@
+i@@ -1,160 +1,176 @@
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
@@ -174,4 +175,3 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor GastroPOS activo en http://0.0.0.0:${PORT}`);
-});
