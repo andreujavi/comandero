@@ -1,0 +1,62 @@
+{
+  "tables": [
+    {
+      "id": 1,
+      "nombre": "Mesa 1",
+      "estado": "libre"
+    },
+    {
+      "id": 2,
+      "nombre": "Mesa 2",
+      "estado": "libre"
+    },
+    {
+      "id": 3,
+      "nombre": "Mesa 3",
+      "estado": "libre"
+    },
+    {
+      "id": 4,
+      "nombre": "Mesa 4",
+      "estado": "libre"
+    },
+    {
+      "id": 5,
+      "nombre": "Mesa 5",
+      "estado": "libre"
+    }
+  ],
+  "orders": [
+    {
+      "mesa": "Mesa 1",
+      "items": [
+        {
+          "cantidad": 2,
+          "nombre": "Café con leche"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Tostada de jamón"
+        }
+      ],
+      "estado": "pendiente",
+      "hora": "10:15:30"
+    },
+    {
+      "mesa": "Mesa 5",
+      "items": [
+        {
+          "cantidad": 1,
+          "nombre": "Menú del Día"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Agua mineral"
+        }
+      ],
+      "estado": "activo",
+      "hora": "14:22:10"
+    }
+  ],
+  "pedidos": []
+}

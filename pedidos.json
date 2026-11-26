@@ -1,0 +1,19 @@
+{
+  "nextId": 2,
+  "pedidos": [
+    {
+      "id": 1,
+      "mesa": "Mesa 1",
+      "items": [
+        {
+          "nombre": "Ca�a",
+          "cantidad": 2,
+          "precio": 2.5
+        }
+      ],
+      "total": 5,
+      "estado": "pendiente",
+      "creado_en": "22/11/2026, 22:10:55"
+    }
+  ]
+}

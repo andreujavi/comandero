@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= titulo %></title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f2f5; 
+        }
+        header { 
+            background-color: #1f2937; 
+            color: white; 
+            padding: 1rem 2rem; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        
+        /* Navegación básica */
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: bold;
+            padding: 8px 16px;
+            background-color: #374151;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .nav-links a:hover { background-color: #4b5563; }
+
+        /* Contenedor de pedidos */
+        .orders-container { 
+            padding: 20px; 
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* Tarjeta de cada pedido */
+        .order-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .order-header {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-header h2 { margin: 0; font-size: 1.2rem; color: #111827; }
+        
+        /* Etiquetas de estado */
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+        .status.pending { background-color: #fef3c7; color: #d97706; }
+        .status.completed { background-color: #d1fae5; color: #059669; }
+
+        .order-items {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .order-items ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .order-items li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            color: #4b5563;
+        }
+        .order-items li:last-child { border-bottom: none; }
+        
+        .order-footer {
+            padding: 15px;
+            background-color: #f9fafb;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-ready { background-color: #10b981; color: white; }
+        .btn-cancel { background-color: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📋 <%= titulo %></h1>
+        <div class="nav-links">
+            <a href="/">Volver al TPV</a>
+        </div>
+    </header>
+
+    <div class="orders-container">
+        
+        <!-- Pedido 1 -->
+        <div class="order-card">
+            <div class="order-header">
+                <h2>Mesa 3</h2>
+                <span class="status pending">Pendiente</span>
+            </div>
+            <div class="order-items">
+                <ul>
+                    <li><span>2x Hamburguesa Completa</span></li>
+                    <li><span>1x Patatas Bravas</span></li>
+                    <li><span>2x Cerveza Artesana</span></li>
+                </ul>
+            </div>
+            <div class="order-footer">
+                <button class="btn btn-cancel">Cancelar</button>
+                <button class="btn btn-ready">Listo</button>
+            </div>
+        </div>
+
+        <!-- Pedido 2 -->
+        <div class="order-card">
+            <div class="order-header">
+                <h2>Mesa 5</h2>
+                <span class="status pending">Pendiente</span>
+            </div>
+            <div class="order-items">
+                <ul>
+                    <li><span>1x Ensalada César</span></li>
+                    <li><span>1x Agua Mineral</span></li>
+                </ul>
+            </div>
+            <div class="order-footer">
+                <button class="btn btn-cancel">Cancelar</button>
+                <button class="btn btn-ready">Listo</button>
+            </div>
+        </div>
+
+        <!-- Pedido 3 -->
+        <div class="order-card">
+            <div class="order-header">
+                <h2>Mesa 1</h2>
+                <span class="status completed">Servido</span>
+            </div>
+            <div class="order-items">
+                <ul>
+                    <li><span>4x Cerveza Artesana</span></li>
+                    <li><span>2x Patatas Bravas</span></li>
+                </ul>
+            </div>
+            <div class="order-footer">
+                <button class="btn btn-ready" disabled style="background-color: #9ca3af; cursor: not-allowed;">Completado</button>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

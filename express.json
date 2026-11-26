@@ -1,0 +1,68 @@
+const express = require('express');
+const db = require('./db');
+
+const app = express();
+app.use(express.json());
+
+// Obtener todos los pedidos (opcionalmente filtrados por ?estado=pendiente)
+app.get('/api/pedidos', (req, res) => {
+  try {
+    const { estado } = req.query;
+    const rows = estado
+      ? db.prepare('SELECT * FROM pedidos WHERE estado = ? ORDER BY id DESC').all(estado)
+      : db.prepare('SELECT * FROM pedidos ORDER BY id DESC').all();
+
+    const pedidos = rows.map((row) => ({
+      id: row.id,
+      mesa: row.mesa,
+      items: JSON.parse(row.items_json),
+      total: row.total,
+      estado: row.estado,
+      creado_en: row.creado_en,
+    }));
+
+    res.json({ ok: true, pedidos });
+  } catch (err) {
+    console.error('Error al leer pedidos:', err);
+    res.status(500).json({ ok: false, error: 'Error al consultar pedidos en SQLite' });
+  }
+});
+
+// Crear y persistir un nuevo pedido
+app.post('/api/pedidos', (req, res) => {
+  try {
+    const { mesa, items, total, estado = 'pendiente' } = req.body;
+
+    if (!mesa || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Debes indicar "mesa" y al menos un elemento en "items"',
+      });
+    }
+
+    const totalCalculado =
+      typeof total === 'number'
+        ? total
+        : items.reduce((acc, item) => acc + Number(item.precio || 0) * Number(item.cantidad || 1), 0);
+
+    const stmt = db.prepare(`
+      INSERT INTO pedidos (mesa, items_json, total, estado)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(String(mesa), JSON.stringify(items), totalCalculado, String(estado));
+
+    const nuevoPedido = {
+      id: info.lastInsertRowid,
+      mesa: String(mesa),
+      items,
+      total: totalCalculado,
+      estado: String(estado),
+    };
+
+    res.status(201).json({ ok: true, pedido: nuevoPedido });
+  } catch (err) {
+    console.error('Error al guardar pedido:', err);
+    res.status(500).json({ ok: false, error: 'Error al guardar el pedido en SQLite' });
+  }
+});
