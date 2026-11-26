@@ -67,9 +67,6 @@ app.delete('/api/pedidos/:id', (req, res) => {
         res.status(404).json({ success: false, message: 'Pedido no encontrado' });
     }
 });
+const PORT = process.env.PORT || 10000;});
 
-const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor GastroPOS activo en http://0.0.0.0:${PORT}`);
 });
