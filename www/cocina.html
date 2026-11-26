@@ -81,150 +81,150 @@
         </table>
     </div>
 
-    <script>
-        // =========================================================================
-        // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
-        // =========================================================================
-        const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
+    <!-- ... existing code ... -->
+        <script>
+            // =========================================================================
+            // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
+            // =========================================================================
+            const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
 
-        const configuracionICE = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
-                {
-                    urls: 'turn:free.expressturn.com:3478',
-                    username: '000000002102154901',
-                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                }
-            ],
-            iceCandidatePoolSize: 10
-        };
-
-        // =========================================================================
-        // 2. OBTENER Y PINTAR COMANDAS EN TIEMPO REAL (BARRA Y COCINA)
-        // =========================================================================
-        async function cargarComandasCocina() {
-            const divBarra = document.getElementById('lista-barra');
-            const divCocina = document.getElementById('lista-cocina');
-            const estadoEl = document.getElementById('estado-conexion');
-
-            try {
-                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
-                const data = await response.json();
-
-                // Soporta tanto array directo [...] como { pedidos: [...] }
-                const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
-
-                if (estadoEl) {
-                    estadoEl.textContent = '🟢 Conectado en Tiempo Real';
-                    estadoEl.style.color = '#10b981';
-                    estadoEl.style.background = '#ecfdf5';
-                }
-
-                if (!divBarra || !divCocina) return;
-
-                let htmlBarra = '';
-                let htmlCocina = '';
-
-                pedidos.forEach(pedido => {
-                    const texto = (pedido.detalles || '').toLowerCase();
-                    const hora = pedido.created_at || (pedido.fecha ? pedido.fecha.slice(11, 16) : '');
-                    const idCorto = String(pedido.id).slice(-4);
-
-                    // Detectar si corresponde a Barra o Cocina
-                    const esBarra = pedido.tipo === 'barra' ||
-                                    pedido.tipo === 'bebida' ||
-                                    texto.includes('bebida') ||
-                                    texto.includes('agua') ||
-                                    texto.includes('refresco') ||
-                                    texto.includes('cerveza') ||
-                                    texto.includes('copa') ||
-                                    texto.includes('vino') ||
-                                    texto.includes('café') ||
-                                    texto.includes('cafe');
-
-                    const tarjetaHTML = `
-                        <div class="card">
-                            <div class="card-header">
-                                <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
-                                <span>#${idCorto}</span>
-                            </div>
-                            <div class="card-body">${pedido.detalles}</div>
-                            <div class="card-footer">
-                                <span>🕒 ${hora}</span>
-                                <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
-                            </div>
-                        </div>
-                    `;
-
-                    if (esBarra) {
-                        htmlBarra += tarjetaHTML;
-                    } else {
-                        htmlCocina += tarjetaHTML;
+            const configuracionICE = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun.cloudflare.com:3478' },
+                    {
+                        urls: 'turn:free.expressturn.com:3478',
+                        username: '000000002102154901',
+                        credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
                     }
-                });
+                ],
+                iceCandidatePoolSize: 10
+            };
 
-                divBarra.innerHTML = htmlBarra || '<p class="empty-column">No hay pedidos pendientes en barra</p>';
-                divCocina.innerHTML = htmlCocina || '<p class="empty-column">No hay pedidos pendientes en cocina</p>';
+            // =========================================================================
+            // 2. OBTENER Y PINTAR COMANDAS EN TIEMPO REAL (BARRA Y COCINA)
+            // =========================================================================
+            async function cargarComandasCocina() {
+                const divBarra = document.getElementById('lista-barra');
+                const divCocina = document.getElementById('lista-cocina');
+                const estadoEl = document.getElementById('estado-conexion');
 
-            } catch (error) {
-                console.error('Error al conectar con Render:', error);
-                if (estadoEl) {
-                    estadoEl.textContent = '🔴 Sin conexión con el servidor';
-                    estadoEl.style.color = '#ef4444';
-                    estadoEl.style.background = '#fef2f2';
+                try {
+                    const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
+                    const data = await response.json();
+
+                    // Soporta tanto array directo [...] como { pedidos: [...] }
+                    const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
+
+                    if (estadoEl) {
+                        estadoEl.textContent = '🟢 Conectado en Tiempo Real';
+                        estadoEl.style.color = '#10b981';
+                        estadoEl.style.background = '#ecfdf5';
+                    }
+
+                    if (!divBarra || !divCocina) return;
+
+                    let htmlBarra = '';
+                    let htmlCocina = '';
+
+                    pedidos.forEach(pedido => {
+                        const texto = (pedido.detalles || '').toLowerCase();
+                        const hora = pedido.created_at || (pedido.fecha ? pedido.fecha.slice(11, 16) : '');
+                        const idCorto = String(pedido.id).slice(-4);
+
+                        // Detectar si corresponde a Barra o Cocina
+                        const esBarra = pedido.tipo === 'barra' ||
+                                        pedido.tipo === 'bebida' ||
+                                        texto.includes('bebida') ||
+                                        texto.includes('agua') ||
+                                        texto.includes('refresco') ||
+                                        texto.includes('cerveza') ||
+                                        texto.includes('copa') ||
+                                        texto.includes('vino') ||
+                                        texto.includes('café') ||
+                                        texto.includes('cafe');
+
+                        const tarjetaHTML = `
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
+                                    <span>#${idCorto}</span>
+                                </div>
+                                <div class="card-body">${pedido.detalles}</div>
+                                <div class="card-footer">
+                                    <span>🕒 ${hora}</span>
+                                    <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
+                                </div>
+                            </div>
+                        `;
+
+                        if (esBarra) {
+                            htmlBarra += tarjetaHTML;
+                        } else {
+                            htmlCocina += tarjetaHTML;
+                        }
+                    });
+
+                    divBarra.innerHTML = htmlBarra || '<p class="empty-column">No hay pedidos pendientes en barra</p>';
+                    divCocina.innerHTML = htmlCocina || '<p class="empty-column">No hay pedidos pendientes en cocina</p>';
+
+                } catch (error) {
+                    console.error('Error al conectar con Render:', error);
+                    if (estadoEl) {
+                        estadoEl.textContent = '🔴 Sin conexión con el servidor';
+                        estadoEl.style.color = '#ef4444';
+                        estadoEl.style.background = '#fef2f2';
+                    }
                 }
             }
-        }
 
-        // =========================================================================
-        // 3. BORRAR UNA COMANDA AL PULSAR "SERVIDO"
-        // =========================================================================
-        async function marcarServido(id) {
-            try {
-                const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
-                    method: 'DELETE'
-                });
+            // =========================================================================
+            // 3. BORRAR UNA COMANDA AL PULSAR "SERVIDO"
+            // =========================================================================
+            async function marcarServido(id) {
+                try {
+                    const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
+                        method: 'DELETE'
+                    });
 
-                if (response.ok) {
-                    mostrarAviso('✅ Comanda marcada como servida.', '#10b981');
-                    cargarComandasCocina();
-                } else {
-                    mostrarAviso('⚠️ No se pudo retirar la comanda.', '#f59e0b');
+                    if (response.ok) {
+                        mostrarAviso('✅ Comanda marcada como servida.', '#10b981');
+                        cargarComandasCocina();
+                    } else {
+                        mostrarAviso('⚠️ No se pudo retirar la comanda.', '#f59e0b');
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar comanda:', error);
+                    mostrarAviso('❌ Error de red al retirar la comanda.', '#ef4444');
                 }
-            } catch (error) {
-                console.error('Error al eliminar comanda:', error);
-                mostrarAviso('❌ Error de red al retirar la comanda.', '#ef4444');
             }
-        }
 
-        // Notificación visual flotante (sin bloquear pantalla)
-        function mostrarAviso(texto, colorFondo = '#333') {
-            let banner = document.getElementById('aviso-cocina');
-            if (!banner) {
-                banner = document.createElement('div');
-                banner.id = 'aviso-cocina';
-                banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
-                document.body.appendChild(banner);
+            // Notificación visual flotante (sin bloquear pantalla)
+            function mostrarAviso(texto, colorFondo = '#333') {
+                let banner = document.getElementById('aviso-cocina');
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'aviso-cocina';
+                    banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
+                    document.body.appendChild(banner);
+                }
+                banner.style.backgroundColor = colorFondo;
+                banner.textContent = texto;
+                banner.style.opacity = '1';
+                clearTimeout(banner._timer);
+                banner._timer = setTimeout(() => {
+                    banner.style.opacity = '0';
+                }, 3000);
             }
-            banner.style.backgroundColor = colorFondo;
-            banner.textContent = texto;
-            banner.style.opacity = '1';
-            clearTimeout(banner._timer);
-            banner._timer = setTimeout(() => {
-                banner.style.opacity = '0';
-            }, 3000);
-        }
 
-        // =========================================================================
-        // 4. INICIAR SINCRONIZACIÓN AUTOMÁTICA CADA 3 SEGUNDOS
-        // =========================================================================
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarComandasCocina();
-            setInterval(cargarComandasCocina, 3000);
-        });
-    </script>
-
-</body>
-</html>
+            // =========================================================================
+            // 4. INICIAR SINCRONIZACIÓN AUTOMÁTICA CADA 3 SEGUNDOS
+            // =========================================================================
+            document.addEventListener('DOMContentLoaded', () => {
+                cargarComandasCocina();
+                setInterval(cargarComandasCocina, 3000);
+            });
+        </script>
+    </body>
+    </html>
