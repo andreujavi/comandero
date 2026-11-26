@@ -1,271 +1,309 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GastroPos - Panel de Administración, Precios y Tickets</title>
+    <title>GastroPOS - Comandero Tablet</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background: #121212; color: #fff; padding: 15px; display: flex; flex-direction: column; gap: 20px; }
-
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        h1 { color: #4CAF50; font-size: 1.4rem; }
-        #estado-conexion { font-weight: bold; font-size: 0.85rem; padding: 5px 10px; border-radius: 4px; background: #222; }
-
-        /* Contenedor Principal Responsive */
-        .admin-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 900px) {
-            .admin-layout { grid-template-columns: 1fr; }
+        :root {
+            --bg-body: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --radius-lg: 16px;
+            --radius-md: 10px;
         }
-
-        .panel-seccion { background: #1e1e1e; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { color: #FFD54F; font-size: 1.1rem; margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* Selector de Zonas de Productos */
-        .zonas-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 8px; background: #333; color: #fff; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; font-size: 0.85rem; }
-        .tab-btn.active { background: #2196F3; }
-
-        .zona-contenido { display: none; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 15px; }
-        .zona-contenido.active { display: grid; }
-
-        .btn-producto { background: #2c2c2c; color: white; border: 1px solid #444; padding: 10px 5px; font-size: 0.85rem; cursor: pointer; border-radius: 4px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
-        .btn-producto span { font-size: 0.75rem; color: #4CAF50; font-weight: bold; }
-        .btn-producto:active { background: #3f51b5; }
-
-        /* Elementos del Ticket Activo */
-        .grupo-control { margin-bottom: 12px; }
-        .grupo-control label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: #bbb; }
-        .grupo-control select, .grupo-control input { width: 100%; padding: 10px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 0.95rem; }
-
-        .ticket-box { background: #161616; border: 1px dashed #444; border-radius: 4px; padding: 10px; min-height: 80px; max-height: 130px; overflow-y: auto; margin-bottom: 8px; }
-        .ticket-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #222; font-size: 0.9rem; }
-        .btn-quitar { background: none; border: none; color: #f44336; cursor: pointer; font-weight: bold; font-size: 1rem; }
-
-        .ticket-total { display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 12px; color: #4CAF50; }
-
-        /* Botones de Acción de Comanda */
-        .acciones-comanda { display: flex; gap: 8px; }
-        .btn-enviar-comanda { flex: 2; background: #4CAF50; color: white; border: none; padding: 12px; font-size: 0.95rem; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
-        .btn-enviar-comanda:active { background: #388E3C; }
-        .btn-imprimir-ticket { flex: 1; background: #FF9800; color: white; border: none; padding: 12px; font-size: 0.95rem; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
-        .btn-imprimir-ticket:active { background: #F57C00; }
-
-        /* Listado de Comandas Activas (Cocina) */
-        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-        .pedido-card { background: #252525; border-left: 5px solid #FF9800; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .pedido-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .pedido-mesa { font-size: 1rem; font-weight: bold; color: #FFD54F; }
-        .pedido-hora { font-size: 0.75rem; color: #aaa; }
-        .pedido-detalles { margin-bottom: 10px; font-size: 0.9rem; line-height: 1.3; color: #ddd; word-break: break-word; }
-        .btn-completar { background: #f44336; color: white; border: none; padding: 8px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; }
-
-        /* --- ESTILOS EXCLUSIVOS PARA IMPRESIÓN DE TICKET --- */
-        #ticket-impresion { display: none; }
-
-        @media print {
-            body * { visibility: hidden; }
-            #ticket-impresion, #ticket-impresion * { visibility: visible; }
-            #ticket-impresion {
-                display: block;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                background: #fff;
-                color: #000;
-                padding: 10px;
-                font-family: 'Courier New', Courier, monospace;
-            }
-            .ticket-print-header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-            .ticket-print-body { margin-bottom: 10px; }
-            .ticket-print-total { font-weight: bold; font-size: 1.1rem; border-top: 1px dashed #000; padding-top: 5px; margin-top: 5px; }
-            .ticket-print-footer { text-align: center; font-size: 0.8rem; border-top: 1px dashed #000; padding-top: 5px; margin-top: 10px; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 15px;
         }
-
-        .botones-flotantes-izquierda {
-        position: fixed;
-        bottom: 25px;
-        left: 25px;
-        display: flex;
-        flex-direction: row; /* Cambio a horizontal: uno al lado del otro */
-        gap: 12px;
-        z-index: 9999;
-    }
-
-    /* ESTILO CUADRADO CON EFECTO CRISTAL LÍQUIDO */
-    .btn-cristal-cuadrado {
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-top: 1px solid rgba(255, 255, 255, 0.4);
-        border-left: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        color: #ffffff;
-        font-size: 20px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-
-    /* EFECTO HOVER (AL PASAR EL RATÓN) */
-    .btn-cristal-cuadrado:hover {
-        background: rgba(255, 255, 255, 0.25);
-        border-color: rgba(255, 255, 255, 0.5);
-        transform: translateY(-3px) scale(1.05);
-        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
-    }
-
-    /* EFECTO ACTIVE (AL CLICKEAR) */
-    .btn-cristal-cuadrado:active {
-        transform: translateY(1px) scale(0.98);
-    }
-
-    /* VARIANTE ROJA PARA EL BOTÓN DE BORRADO */
-    .btn-cristal-cuadrado.btn-peligro {
-        background: rgba(255, 75, 75, 0.2);
-        border: 1px solid rgba(255, 100, 100, 0.4);
-        color: #ff9999;
-    }
-
-    .btn-cristal-cuadrado.btn-peligro:hover {
-        background: rgba(255, 75, 75, 0.4);
-        border-color: rgba(255, 100, 100, 0.8);
-        color: #ffffff;
-        box-shadow: 0 12px 40px 0 rgba(255, 75, 75, 0.3);
-    }
+        .header {
+            max-width: 1200px;
+            margin: 0 auto 15px auto;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .header h1 { margin: 0; font-size: 1.4rem; }
+        .estado-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #ecfdf5;
+            color: #10b981;
+        }
+        .layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 850px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1.15rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .categoria-titulo {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin: 15px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .grid-productos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 10px;
+        }
+        .btn-producto {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 76px;
+        }
+        .btn-producto:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+            transform: translateY(-1px);
+        }
+        .btn-producto:active { transform: scale(0.97); }
+        .prod-nombre { font-weight: 700; font-size: 0.92rem; color: var(--text-primary); }
+        .prod-precio { font-weight: 800; font-size: 0.9rem; color: var(--primary); margin-top: 6px; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #f8fafc;
+        }
+        .carrito-box {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            background: #f8fafc;
+            min-height: 150px;
+            max-height: 290px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+        .carrito-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            font-size: 0.92rem;
+        }
+        .carrito-controles {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-mini {
+            border: none;
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            font-weight: 800;
+            cursor: pointer;
+            color: #fff;
+        }
+        .btn-restar { background: var(--danger); }
+        .btn-sumar { background: var(--primary); }
+        .total-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            padding: 12px;
+            background: #eff6ff;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+        .btn-enviar {
+            width: 100%;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: var(--radius-md);
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-enviar:hover { background: var(--success-hover); }
+        .pedido-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-completar {
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>🖥️  - Panel de Administración y Precios</h1>
-        <div id="estado-conexion">🔴 Conectando...</div>
-    </header>
-     <div class="botones-flotantes-izquierda">
-    <button class="btn-cristal-cuadrado" onclick="window.location.href='cocina.html'" title="Ir al Inicio">
-        🏠
-    </button>
-    <button class="btn-cristal-cuadrado" onclick="window.location.href='tablet.html'" title="Ir al Inicio">
-        🔄
-    </button>
-
-    </button>
-    <button class="btn-cristal-cuadrado btn-peligro" onclick="accionBtn3()" title="Borrar / Eliminar">
-        🗑️
-    </button>
- </div>
-    <div class="admin-layout">
-
-        <!-- COLUMNA IZQUIERDA: CREAR Y AÑADIR COMANDA NUEVA -->
-        <div class="panel-seccion">
-            <h2>➕ Crear Comanda con Precios</h2>
-
-            <div class="grupo-control">
-                <label for="select-mesa">Seleccionar Mesa o Ubicación:</label>
-                <select id="select-mesa">
-                    <optgroup label="🏠 Interior">
-                        <option value="Interior 1">Interior 1</option><option value="Interior 2">Interior 2</option><option value="Interior 3">Interior 3</option><option value="Interior 4">Interior 4</option><option value="Interior 5">Interior 5</option>
-                    </optgroup>
-                    <optgroup label="☀️ Exterior">
-                        <option value="Exterior 1">Exterior 1</option><option value="Exterior 2">Exterior 2</option><option value="Exterior 3">Exterior 3</option><option value="Exterior 4">Exterior 4</option><option value="Exterior 5">Exterior 5</option>
-                    </optgroup>
-                    <optgroup label="🍺 Barra">
-                        <option value="Barra 1">Barra 1</option><option value="Barra 2">Barra 2</option><option value="Barra 3">Barra 3</option><option value="Barra 4">Barra 4</option><option value="Barra 5">Barra 5</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <!-- Zonas de Productos -->
-            <div class="zonas-tabs">
-                <button class="tab-btn active" onclick="cambiarZona('zona-carta')">Carta</button>
-                <button class="tab-btn" onclick="cambiarZona('zona-refrescos')">Refrescos</button>
-                <button class="tab-btn" onclick="cambiarZona('zona-alcohol')">Alcohol</button>
-                <button class="tab-btn" onclick="cambiarZona('zona-combinados')">Combinados</button>
-            </div>
-
-            <!-- 1. Carta -->
-            <div id="zona-carta" class="zona-contenido active">
-                <button class="btn-producto" onclick="agregarAlCarrito('Entrecot', 16.50)">🥩 Entrecot <span>16.50 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Paella', 12.00)">🥘 Paella <span>12.00 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Ensalada', 7.50)">🥗 Ensalada <span>7.50 €</span></button>
-            </div>
-            <!-- 2. Refrescos -->
-            <div id="zona-refrescos" class="zona-contenido">
-                <button class="btn-producto" onclick="agregarAlCarrito('Coca-Cola', 2.50)">🥤 Coca-Cola <span>2.50 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Fanta Naranja', 2.50)">🍊 Fanta <span>2.50 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Agua', 1.80)">🍼 Agua <span>1.80 €</span></button>
-            </div>
-            <!-- 3. Alcohol -->
-            <div id="zona-alcohol" class="zona-contenido">
-                <button class="btn-producto" onclick="agregarAlCarrito('Caña Cerveza', 2.20)">🍺 Caña <span>2.20 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Vino Tinto', 3.00)">🍷 Vino Tinto <span>3.00 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Gin Tonic', 6.50)">🍸 Gin Tonic <span>6.50 €</span></button>
-            </div>
-            <!-- 4. Platos Combinados -->
-            <div id="zona-combinados" class="zona-contenido">
-                <button class="btn-producto" onclick="agregarAlCarrito('Lomo Patatas', 9.50)">🥩 Lomo/Patatas <span>9.50 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Pechuga Plancha', 9.00)">🍗 Pechuga <span>9.00 €</span></button>
-                <button class="btn-producto" onclick="agregarAlCarrito('Huevos con Bacon', 8.50)">🍳 Huevos/Bacon <span>8.50 €</span></button>
-            </div>
-
-            <!-- Añadir producto personalizado con precio opcional -->
-            <div class="grupo-control">
-                <label for="input-custom">Producto personalizado:</label>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="input-custom" placeholder="Nombre..." style="flex: 2;">
-                    <input type="number" id="input-precio" placeholder="Precio €" step="0.10" style="flex: 1;">
-                    <button onclick="agregarCustom()" style="background:#FF9800; color:#fff; border:none; padding:0 12px; border-radius:4px; font-weight:bold; cursor:pointer;">+</button>
-                </div>
-            </div>
-
-            <div class="grupo-control">
-                <label>Ticket actual de la comanda:</label>
-                <div class="ticket-box" id="lista-carrito">
-                    <span style="color: #666; font-size: 0.85rem;">Ningún producto añadido...</span>
-                </div>
-                <div class="ticket-total">
-                    <span>TOTAL:</span>
-                    <span id="total-precio">0.00 €</span>
-                </div>
-            </div>
-
-            <div class="acciones-comanda">
-                <button class="btn-enviar-comanda" onclick="enviarComanda()">🚀 Enviar a Cocina</button>
-                <button class="btn-imprimir-ticket" onclick="imprimirTicket()">🖨️ Imprimir Ticket</button>
-            </div>
-        </div>
-
-        <!-- COLUMNA DERECHA: VISOR DE COMANDAS ACTIVAS -->
-        <div class="panel-seccion">
-            <h2>📋 Comandas Activas en Cocina</h2>
-            <div class="grid-pedidos" id="lista-pedidos">
-                <span style="color: #666; font-size: 0.9rem;">Cargando comandas...</span>
-            </div>
-        </div>
-
+    <div class="header">
+        <h1>📱 GastroPOS - Comandero</h1>
+        <span id="estado-conexion" class="estado-badge">⏳ Conectando con Render...</span>
     </div>
 
-    <!-- FORMATO OCULTO PARA IMPRESIÓN TÉRMICA -->
-    <div id="ticket-impresion">
-        <div class="ticket-print-header">
-            <h3> RESTAURANTE</h3>
-            <p>Comprobante de Venta</p>
-            <p id="print-mesa">Mesa: -</p>
-            <p id="print-fecha">-</p>
+    <div class="layout">
+        <!-- COLUMNA IZQUIERDA: CARTA DE PRODUCTOS CON PRECIOS -->
+        <div class="panel">
+            <h2>🍽️ Carta de Productos (Pulsa para añadir)</h2>
+
+            <div class="categoria-titulo">🍔 Comidas (Cocina)</div>
+            <div class="grid-productos">
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Hamburguesa Completa', 9.50, 'comida')">
+                    <span class="prod-nombre">🍔 Hamburguesa Completa</span>
+                    <span class="prod-precio">9,50 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Patatas Bravas', 5.50, 'comida')">
+                    <span class="prod-nombre">🍟 Patatas Bravas</span>
+                    <span class="prod-precio">5,50 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Bocadillo Lomo Queso', 6.80, 'comida')">
+                    <span class="prod-nombre">🥖 Bocadillo Lomo Queso</span>
+                    <span class="prod-precio">6,80 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Ensalada César', 8.00, 'comida')">
+                    <span class="prod-nombre">🥗 Ensalada César</span>
+                    <span class="prod-precio">8,00 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Croquetas Caseras (6u)', 7.20, 'comida')">
+                    <span class="prod-nombre">🥟 Croquetas Caseras</span>
+                    <span class="prod-precio">7,20 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Pizza Margarita', 10.50, 'comida')">
+                    <span class="prod-nombre">🍕 Pizza Margarita</span>
+                    <span class="prod-precio">10,50 €</span>
+                </button>
+            </div>
+
+            <div class="categoria-titulo">🍹 Bebidas (Barra)</div>
+            <div class="grid-productos">
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Caña Cerveza', 2.50, 'barra')">
+                    <span class="prod-nombre">🍺 Caña Cerveza</span>
+                    <span class="prod-precio">2,50 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Refresco Cola', 2.80, 'barra')">
+                    <span class="prod-nombre">🥤 Refresco Cola</span>
+                    <span class="prod-precio">2,80 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Agua Mineral 50cl', 2.00, 'barra')">
+                    <span class="prod-nombre">💧 Agua Mineral</span>
+                    <span class="prod-precio">2,00 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Copa Vino Rioja', 3.50, 'barra')">
+                    <span class="prod-nombre">🍷 Copa Vino Rioja</span>
+                    <span class="prod-precio">3,50 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Café con Leche', 1.80, 'barra')">
+                    <span class="prod-nombre">☕ Café con Leche</span>
+                    <span class="prod-precio">1,80 €</span>
+                </button>
+                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Combinado / Copa', 7.50, 'barra')">
+                    <span class="prod-nombre">🍹 Combinado / Copa</span>
+                    <span class="prod-precio">7,50 €</span>
+                </button>
+            </div>
         </div>
-        <div class="ticket-print-body">
-            <ul id="print-lista" style="list-style: none; padding: 0;"></ul>
-            <div class="ticket-print-total" id="print-total">TOTAL: 0.00 €</div>
-        </div>
-        <div class="ticket-print-footer">
-            <p>¡Gracias por su visita!</p>
+
+        <!-- COLUMNA DERECHA: CARRITO ACTUAL Y COMANDAS EN CURSO -->
+        <div class="panel">
+            <h2>🧾 Comanda Actual</h2>
+
+            <div class="form-row">
+                <div>
+                    <label for="mesa">Número de Mesa</label>
+                    <input type="number" id="mesa" min="1" max="99" value="1">
+                </div>
+                <div>
+                    <label for="notas">Nota para Cocina/Barra</label>
+                    <input type="text" id="notas" placeholder="Ej: Sin cebolla, poco hecho...">
+                </div>
+            </div>
+
+            <div id="carrito-lista" class="carrito-box"></div>
+
+            <div class="total-bar">
+                <span>TOTAL COMANDA:</span>
+                <span id="carrito-total">0,00 €</span>
+            </div>
+
+            <button type="button" class="btn-enviar" onclick="enviarComanda()">🚀 Enviar a Cocina y Barra</button>
+
+            <h2 style="margin-top: 25px;">📋 Comandas Activas en Render</h2>
+            <div id="lista-pedidos"></div>
         </div>
     </div>
 
@@ -290,136 +328,147 @@
         };
 
         // =========================================================================
-        // 2. ESTADO DEL CARRITO Y GESTIÓN DE ARTÍCULOS
+        // 2. GESTIÓN DEL CARRITO CON PRECIOS
         // =========================================================================
         let carrito = [];
 
-        // Añade un producto al carrito desde los botones del menú
-        function agregarAlCarrito(nombre, precio = 0, tipo = 'comida') {
-            try {
-                const existente = carrito.find(item => item.nombre === nombre);
-                if (existente) {
-                    existente.cantidad += 1;
-                } else {
-                    carrito.push({
-                        nombre: nombre,
-                        precio: Number(precio) || 0,
-                        cantidad: 1,
-                        tipo: tipo
-                    });
-                }
-                actualizarVistaCarrito();
-            } catch (error) {
-                console.error('Error al agregar al carrito:', error);
+        function agregarAlCarrito(nombre, precio, tipo = 'comida') {
+            const precioNum = Number(precio) || 0;
+            const existente = carrito.find(item => item.nombre === nombre && item.tipo === tipo);
+
+            if (existente) {
+                existente.cantidad += 1;
+            } else {
+                carrito.push({
+                    nombre: nombre,
+                    precio: precioNum,
+                    cantidad: 1,
+                    tipo: tipo
+                });
             }
+            actualizarVistaCarrito();
         }
 
-        // Elimina o resta una unidad de un producto del carrito
-        function quitarDelCarrito(index) {
-            if (index < 0 || index >= carrito.length) return;
-            if (carrito[index].cantidad > 1) {
-                carrito[index].cantidad -= 1;
-            } else {
+        function cambiarCantidad(index, delta) {
+            if (!carrito[index]) return;
+            carrito[index].cantidad += delta;
+            if (carrito[index].cantidad <= 0) {
                 carrito.splice(index, 1);
             }
             actualizarVistaCarrito();
         }
 
-        // Vacía el carrito actual
-        function limpiarCarrito() {
-            carrito = [];
-            actualizarVistaCarrito();
-        }
-
-        // Dibuja la lista de artículos seleccionados y el total en pantalla
         function actualizarVistaCarrito() {
-            const listaEl = document.getElementById('carrito-lista') || document.getElementById('lista-carrito');
-            const totalEl = document.getElementById('carrito-total') || document.getElementById('total-carrito');
-
-            if (!listaEl) return;
+            const listaEl = document.getElementById('carrito-lista');
+            const totalEl = document.getElementById('carrito-total');
 
             if (carrito.length === 0) {
-                listaEl.innerHTML = '<div style="color: #888; text-align: center; padding: 10px;">No hay artículos seleccionados</div>';
-                if (totalEl) totalEl.innerText = '0.00 €';
+                listaEl.innerHTML = '<div style="color:#64748b; text-align:center; padding:35px 10px;">Pulsa los productos de la izquierda para añadirlos</div>';
+                totalEl.textContent = '0,00 €';
                 return;
             }
 
             let html = '';
-            let total = 0;
+            let totalGeneral = 0;
 
             carrito.forEach((item, idx) => {
                 const subtotal = item.precio * item.cantidad;
-                total += subtotal;
+                totalGeneral += subtotal;
+                const iconoDestino = item.tipo === 'barra' ? '🍹' : '🍔';
+
                 html += `
-                    <div class="carrito-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee;">
-                        <span><strong>${item.cantidad}x</strong> ${item.nombre}</span>
+                    <div class="carrito-item">
                         <div>
-                            <span style="margin-right:8px;">${subtotal.toFixed(2)} €</span>
-                            <button type="button" onclick="quitarDelCarrito(${idx})" style="background:#ef4444; color:#fff; border:none; border-radius:4px; padding:2px 8px; cursor:pointer;">-</button>
+                            <div><strong>${item.cantidad}x</strong> ${iconoDestino} ${item.nombre}</div>
+                            <div style="font-size:0.8rem; color:#64748b;">${item.precio.toFixed(2)} €/ud → <strong>${subtotal.toFixed(2)} €</strong></div>
+                        </div>
+                        <div class="carrito-controles">
+                            <button type="button" class="btn-mini btn-restar" onclick="cambiarCantidad(${idx}, -1)">-</button>
+                            <button type="button" class="btn-mini btn-sumar" onclick="cambiarCantidad(${idx}, 1)">+</button>
                         </div>
                     </div>
                 `;
             });
 
             listaEl.innerHTML = html;
-            if (totalEl) totalEl.innerText = `${total.toFixed(2)} €`;
+            totalEl.textContent = `${totalGeneral.toFixed(2)} €`;
         }
 
         // =========================================================================
-        // 3. ENVÍO DE COMANDAS AL SERVIDOR RENDER (/api/pedidos)
+        // 3. ENVÍO A RENDER SEPARANDO BARRA Y COCINA CON SUS PRECIOS
         // =========================================================================
         async function enviarComanda() {
-            const inputMesa = document.getElementById('mesa') || document.getElementById('mesa-id') || document.getElementById('numero-mesa');
-            const selectTipo = document.getElementById('tipo') || document.getElementById('seccion');
-            const inputNotas = document.getElementById('notas') || document.getElementById('observaciones') || document.getElementById('detalles');
+            const mesa = document.getElementById('mesa').value.trim() || '1';
+            const notas = document.getElementById('notas').value.trim();
 
-            const mesa = inputMesa ? inputMesa.value.trim() : '1';
-            const tipo = selectTipo ? selectTipo.value : 'comida';
-            const notasExtra = inputNotas ? inputNotas.value.trim() : '';
-
-            if (carrito.length === 0 && !notasExtra) {
-                mostrarAviso('⚠️ Añade al menos un artículo antes de enviar la comanda.', '#f59e0b');
+            if (carrito.length === 0) {
+                mostrarAviso('⚠️ Selecciona al menos un artículo antes de enviar.', '#f59e0b');
                 return;
             }
 
-            // Formatear detalles legibles para el panel de cocina y barra
-            const resumenArticulos = carrito.map(item => `${item.cantidad}x ${item.nombre}`).join(', ');
-            const detallesFinales = notasExtra
-                ? (resumenArticulos ? `${resumenArticulos} | Nota: ${notasExtra}` : notasExtra)
-                : resumenArticulos;
+            // Separamos los artículos de Barra y de Cocina para que cada pantalla reciba lo suyo con su precio
+            const itemsBarra = carrito.filter(i => i.tipo === 'barra');
+            const itemsCocina = carrito.filter(i => i.tipo !== 'barra');
+
+            const envios = [];
+
+            if (itemsCocina.length > 0) {
+                const totalCocina = itemsCocina.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+                const textoCocina = itemsCocina.map(i => `${i.cantidad}x ${i.nombre} (${(i.precio * i.cantidad).toFixed(2)} €)`).join(', ')
+                    + (notas ? ` | Nota: ${notas}` : '')
+                    + ` — Total: ${totalCocina.toFixed(2)} €`;
+
+                envios.push(fetch(`${URL_SERVIDOR}/api/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mesa_id: mesa,
+                        tipo: 'comida',
+                        detalles: textoCocina,
+                        carrito: itemsCocina
+                    })
+                }));
+            }
+
+            if (itemsBarra.length > 0) {
+                const totalBarra = itemsBarra.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+                const textoBarra = itemsBarra.map(i => `${i.cantidad}x ${i.nombre} (${(i.precio * i.cantidad).toFixed(2)} €)`).join(', ')
+                    + (notas ? ` | Nota: ${notas}` : '')
+                    + ` — Total: ${totalBarra.toFixed(2)} €`;
+
+                envios.push(fetch(`${URL_SERVIDOR}/api/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mesa_id: mesa,
+                        tipo: 'barra',
+                        detalles: textoBarra,
+                        carrito: itemsBarra
+                    })
+                }));
+            }
 
             try {
-                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        mesa_id: mesa || '1',
-                        tipo: tipo,
-                        detalles: detallesFinales,
-                        carrito: carrito
-                    })
-                });
+                const respuestas = await Promise.all(envios);
+                const todoOk = respuestas.every(r => r.ok);
 
-                const data = await response.json();
-
-                if (response.ok && (data.ok || data.success)) {
-                    limpiarCarrito();
-                    if (inputNotas) inputNotas.value = '';
-                    mostrarAviso('✅ Comanda enviada correctamente a cocina/barra.', '#10b981');
+                if (todoOk) {
+                    carrito = [];
+                    document.getElementById('notas').value = '';
+                    actualizarVistaCarrito();
+                    mostrarAviso('✅ Comanda enviada con precios a Cocina/Barra.', '#10b981');
                     cargarPedidosAdmin();
                 } else {
-                    mostrarAviso('❌ El servidor rechazó el pedido: ' + (data.error || 'Error desconocido'), '#ef4444');
+                    mostrarAviso('❌ El servidor devolvió un error al registrar el pedido.', '#ef4444');
                 }
-            } catch (err) {
-                console.error('Error de red al enviar comanda:', err);
-                mostrarAviso('❌ Error de red con el servidor. Comprueba tu conexión.', '#ef4444');
+            } catch (error) {
+                console.error('Error de red al enviar:', error);
+                mostrarAviso('❌ Error de red con el servidor Render.', '#ef4444');
             }
         }
 
         // =========================================================================
-        // 4. CARGA Y BORRADO DE PEDIDOS PENDIENTES EN TIEMPO REAL
+        // 4. SINCRONIZACIÓN DE COMANDAS ACTIVAS
         // =========================================================================
         async function cargarPedidosAdmin() {
             const contenedor = document.getElementById('lista-pedidos');
@@ -428,90 +477,63 @@
             try {
                 const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
                 const data = await response.json();
-
-                // Soporta tanto array directo [...] como objeto { pedidos: [...] }
                 const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
 
-                if (estado) {
-                    estado.innerText = '🟢 Sincronizado';
-                    estado.style.color = '#4CAF50';
-                }
-
-                if (!contenedor) return;
+                estado.textContent = '🟢 Sincronizado en Tiempo Real';
+                estado.style.color = '#10b981';
+                estado.style.background = '#ecfdf5';
 
                 if (pedidos.length === 0) {
-                    contenedor.innerHTML = '<span style="color: #666; font-size: 0.9rem;">No hay comandas pendientes.</span>';
+                    contenedor.innerHTML = '<div style="color:#64748b; font-size:0.9rem;">No hay comandas pendientes.</div>';
                     return;
                 }
 
-                let html = '';
-                pedidos.forEach(p => {
-                    const hora = p.created_at || (p.fecha ? p.fecha.slice(11, 16) : '');
-                    html += `
-                        <div class="pedido-card">
-                            <div>
-                                <div class="pedido-header">
-                                    <span class="pedido-mesa">📍 Mesa ${p.mesa_id}</span>
-                                    <span class="pedido-hora">🕒 ${hora}</span>
-                                </div>
-                                <div class="pedido-detalles">${p.detalles}</div>
+                contenedor.innerHTML = pedidos.map(p => `
+                    <div class="pedido-card">
+                        <div>
+                            <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">
+                                📍 Mesa ${p.mesa_id} <span style="color:#64748b; font-weight:400;">(${p.created_at || ''})</span>
                             </div>
-                            <button type="button" class="btn-completar" onclick="completarPedido('${p.id}')">✔ Servido / Borrar</button>
+                            <div style="font-size:0.88rem; color:#334155;">${p.detalles}</div>
                         </div>
-                    `;
-                });
-                contenedor.innerHTML = html;
+                        <button type="button" class="btn-completar" onclick="completarPedido('${p.id}')">✔ Servido</button>
+                    </div>
+                `).join('');
             } catch (error) {
-                console.error('Error al cargar pedidos:', error);
-                if (estado) {
-                    estado.innerText = '❌ Desconectado';
-                    estado.style.color = '#f44336';
-                }
+                estado.textContent = '🔴 Sin conexión con Render';
+                estado.style.color = '#ef4444';
+                estado.style.background = '#fef2f2';
             }
         }
 
-        // Elimina una comanda ya servida en el servidor
         async function completarPedido(id) {
             try {
-                const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
-                    method: 'DELETE'
-                });
-                if (response.ok) {
-                    cargarPedidosAdmin();
-                } else {
-                    mostrarAviso('⚠️ No se pudo eliminar el pedido.', '#f59e0b');
-                }
-            } catch (error) {
-                console.error('Error al borrar pedido:', error);
-                mostrarAviso('❌ Error de red al borrar el pedido.', '#ef4444');
+                const res = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, { method: 'DELETE' });
+                if (res.ok) cargarPedidosAdmin();
+            } catch (e) {
+                mostrarAviso('❌ Error al borrar comanda.', '#ef4444');
             }
         }
 
-        // Muestra notificaciones visuales no bloqueantes en pantalla
-        function mostrarAviso(texto, colorFondo = '#333') {
-            let banner = document.getElementById('aviso-gastropos');
+        function mostrarAviso(texto, color = '#333') {
+            let banner = document.getElementById('aviso-toast');
             if (!banner) {
                 banner = document.createElement('div');
-                banner.id = 'aviso-gastropos';
-                banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
+                banner.id = 'aviso-toast';
+                banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:10px; font-weight:700; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
                 document.body.appendChild(banner);
             }
-            banner.style.backgroundColor = colorFondo;
-            banner.innerText = texto;
+            banner.style.backgroundColor = color;
+            banner.textContent = texto;
             banner.style.opacity = '1';
-            clearTimeout(banner._timer);
-            banner._timer = setTimeout(() => {
-                banner.style.opacity = '0';
-            }, 3500);
+            clearTimeout(banner._t);
+            banner._t = setTimeout(() => { banner.style.opacity = '0'; }, 3000);
         }
 
-        // =========================================================================
-        // 5. INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA PÁGINA
-        // =========================================================================
         document.addEventListener('DOMContentLoaded', () => {
             actualizarVistaCarrito();
             cargarPedidosAdmin();
-            setInterval(cargarPedidosAdmin, 4000);
+            setInterval(cargarPedidosAdmin, 3000);
         });
     </script>
 </body>

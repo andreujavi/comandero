@@ -1,230 +1,248 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GastroPos - Panel de Cocina</title>
-
+    <title>GastroPOS - Cocina y Barra en Tiempo Real</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
+        :root {
+            --bg-body: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary: #2563eb;
+            --success: #10b981;
+            --success-hover: #059669;
+            --border: #e2e8f0;
+            --radius-lg: 16px;
+            --radius-md: 10px;
         }
-        h1 {
-            color: #333;
-            text-align: center;
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 15px;
         }
         .container {
-            max-width: 950px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: #fff;
+            background: var(--card-bg);
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .badge {
-            padding: 5px 10px;
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
-            background-color: #ffc107; /* Pendiente */
-            font-weight: bold;
-        }
+        .header h1 { margin: 0; font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
         .estado-conexion {
-            text-align: right;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #ecfdf5;
+            color: #10b981;
+        }
+        .columns-wrapper {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .columns-wrapper { grid-template-columns: 1fr; }
+        }
+        .column {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            min-height: 450px;
+        }
+        .column h2 {
+            text-align: center;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+            font-size: 1.2rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .badge-mesa {
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .card-body {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .btn-servir {
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-servir:hover { background: var(--success-hover); }
+        .empty-column {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 15px;
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-md);
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>👨‍🍳 Comandas en Tiempo Real (Cocina)</h1>
-        <div id="estado-conexion" class="estado-conexion">Conectando con el servidor...</div>
-          <button id="btn-probar-envio">Enviar Comanda</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Mesa</th>
-                    <th>Detalles del Pedido</th>
-                    <th>Estado</th>
-                    <th>Hora</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-pedidos">
-                <tr>
-                    <td colspan="5" style="text-align: center;">Cargando pedidos...</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="header">
+            <h1>👨‍🍳 Panel de Cocina y Barra (Tiempo Real)</h1>
+            <div id="estado-conexion" class="estado-conexion">⏳ Conectando con Render...</div>
+        </div>
+
+        <div class="columns-wrapper">
+            <div class="column">
+                <h2>🍹 Barra (Bebidas)</h2>
+                <div id="lista-barra"></div>
+            </div>
+            <div class="column">
+                <h2>🍔 Cocina (Comidas)</h2>
+                <div id="lista-cocina"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- ... existing code ... -->
-        <script>
-            // =========================================================================
-            // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
-            // =========================================================================
-            const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
+    <script>
+        const URL_SERVIDOR = 'https://comandero-m7hv.onrender.com';
 
-            const configuracionICE = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun.cloudflare.com:3478' },
-                    {
-                        urls: 'turn:free.expressturn.com:3478',
-                        username: '000000002102154901',
-                        credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                    }
-                ],
-                iceCandidatePoolSize: 10
-            };
+        const configuracionICE = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                {
+                    urls: 'turn:free.expressturn.com:3478',
+                    username: '000000002102154901',
+                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
 
-            // =========================================================================
-            // 2. OBTENER Y PINTAR COMANDAS EN TIEMPO REAL (BARRA Y COCINA)
-            // =========================================================================
-            async function cargarComandasCocina() {
-                const divBarra = document.getElementById('lista-barra');
-                const divCocina = document.getElementById('lista-cocina');
-                const estadoEl = document.getElementById('estado-conexion');
+        async function cargarComandasCocina() {
+            const divBarra = document.getElementById('lista-barra');
+            const divCocina = document.getElementById('lista-cocina');
+            const estadoEl = document.getElementById('estado-conexion');
 
-                try {
-                    const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
-                    const data = await response.json();
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos`);
+                const data = await response.json();
+                const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
 
-                    // Soporta tanto array directo [...] como { pedidos: [...] }
-                    const pedidos = Array.isArray(data) ? data : (data.pedidos || []);
+                estadoEl.textContent = '🟢 Conectado en Tiempo Real';
+                estadoEl.style.color = '#10b981';
+                estadoEl.style.background = '#ecfdf5';
 
-                    if (estadoEl) {
-                        estadoEl.textContent = '🟢 Conectado en Tiempo Real';
-                        estadoEl.style.color = '#10b981';
-                        estadoEl.style.background = '#ecfdf5';
-                    }
+                let htmlBarra = '';
+                let htmlCocina = '';
 
-                    if (!divBarra || !divCocina) return;
+                pedidos.forEach(pedido => {
+                    const texto = (pedido.detalles || '').toLowerCase();
+                    const esBarra = pedido.tipo === 'barra' ||
+                                    pedido.tipo === 'bebida' ||
+                                    texto.includes('cerveza') ||
+                                    texto.includes('refresco') ||
+                                    texto.includes('agua') ||
+                                    texto.includes('vino') ||
+                                    texto.includes('café') ||
+                                    texto.includes('combinado');
 
-                    let htmlBarra = '';
-                    let htmlCocina = '';
-
-                    pedidos.forEach(pedido => {
-                        const texto = (pedido.detalles || '').toLowerCase();
-                        const hora = pedido.created_at || (pedido.fecha ? pedido.fecha.slice(11, 16) : '');
-                        const idCorto = String(pedido.id).slice(-4);
-
-                        // Detectar si corresponde a Barra o Cocina
-                        const esBarra = pedido.tipo === 'barra' ||
-                                        pedido.tipo === 'bebida' ||
-                                        texto.includes('bebida') ||
-                                        texto.includes('agua') ||
-                                        texto.includes('refresco') ||
-                                        texto.includes('cerveza') ||
-                                        texto.includes('copa') ||
-                                        texto.includes('vino') ||
-                                        texto.includes('café') ||
-                                        texto.includes('cafe');
-
-                        const tarjetaHTML = `
-                            <div class="card">
-                                <div class="card-header">
-                                    <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
-                                    <span>#${idCorto}</span>
-                                </div>
-                                <div class="card-body">${pedido.detalles}</div>
-                                <div class="card-footer">
-                                    <span>🕒 ${hora}</span>
-                                    <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
-                                </div>
+                    const tarjeta = `
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="badge-mesa">Mesa #${pedido.mesa_id}</span>
+                                <span>#${String(pedido.id).slice(-4)}</span>
                             </div>
-                        `;
+                            <div class="card-body">${pedido.detalles}</div>
+                            <div class="card-footer">
+                                <span>🕒 ${pedido.created_at || ''}</span>
+                                <button type="button" class="btn-servir" onclick="marcarServido('${pedido.id}')">✓ Servido</button>
+                            </div>
+                        </div>
+                    `;
 
-                        if (esBarra) {
-                            htmlBarra += tarjetaHTML;
-                        } else {
-                            htmlCocina += tarjetaHTML;
-                        }
-                    });
-
-                    divBarra.innerHTML = htmlBarra || '<p class="empty-column">No hay pedidos pendientes en barra</p>';
-                    divCocina.innerHTML = htmlCocina || '<p class="empty-column">No hay pedidos pendientes en cocina</p>';
-
-                } catch (error) {
-                    console.error('Error al conectar con Render:', error);
-                    if (estadoEl) {
-                        estadoEl.textContent = '🔴 Sin conexión con el servidor';
-                        estadoEl.style.color = '#ef4444';
-                        estadoEl.style.background = '#fef2f2';
-                    }
-                }
-            }
-
-            // =========================================================================
-            // 3. BORRAR UNA COMANDA AL PULSAR "SERVIDO"
-            // =========================================================================
-            async function marcarServido(id) {
-                try {
-                    const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                        mostrarAviso('✅ Comanda marcada como servida.', '#10b981');
-                        cargarComandasCocina();
+                    if (esBarra) {
+                        htmlBarra += tarjeta;
                     } else {
-                        mostrarAviso('⚠️ No se pudo retirar la comanda.', '#f59e0b');
+                        htmlCocina += tarjeta;
                     }
-                } catch (error) {
-                    console.error('Error al eliminar comanda:', error);
-                    mostrarAviso('❌ Error de red al retirar la comanda.', '#ef4444');
-                }
-            }
+                });
 
-            // Notificación visual flotante (sin bloquear pantalla)
-            function mostrarAviso(texto, colorFondo = '#333') {
-                let banner = document.getElementById('aviso-cocina');
-                if (!banner) {
-                    banner = document.createElement('div');
-                    banner.id = 'aviso-cocina';
-                    banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; padding:12px 20px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:opacity 0.3s;';
-                    document.body.appendChild(banner);
-                }
-                banner.style.backgroundColor = colorFondo;
-                banner.textContent = texto;
-                banner.style.opacity = '1';
-                clearTimeout(banner._timer);
-                banner._timer = setTimeout(() => {
-                    banner.style.opacity = '0';
-                }, 3000);
+                divBarra.innerHTML = htmlBarra || '<p class="empty-column">No hay pedidos pendientes en barra</p>';
+                divCocina.innerHTML = htmlCocina || '<p class="empty-column">No hay pedidos pendientes en cocina</p>';
+            } catch (error) {
+                estadoEl.textContent = '🔴 Sin conexión con el servidor';
+                estadoEl.style.color = '#ef4444';
+                estadoEl.style.background = '#fef2f2';
             }
+        }
 
-            // =========================================================================
-            // 4. INICIAR SINCRONIZACIÓN AUTOMÁTICA CADA 3 SEGUNDOS
-            // =========================================================================
-            document.addEventListener('DOMContentLoaded', () => {
-                cargarComandasCocina();
-                setInterval(cargarComandasCocina, 3000);
-            });
-        </script>
-    </body>
-    </html>
+        async function marcarServido(id) {
+            try {
+                const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarComandasCocina();
+                }
+            } catch (error) {
+                console.error('Error al borrar comanda:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarComandasCocina();
+            setInterval(cargarComandasCocina, 2500);
+        });
+    </script>
+</body>
+</html>
