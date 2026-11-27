@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GastroPOS - Comandero Tablet</title>
+    <title>GastroPOS - Comandero Tablet (Carta Completa)</title>
     <style>
         :root {
             --bg-body: #f1f5f9;
@@ -47,8 +47,40 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
+
+        /* Selector de Camarero 1 / Camarero 2 para cada Tablet */
+        .selector-camarero {
+            display: inline-flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            gap: 4px;
+        }
+        .btn-camarero {
+            border: none;
+            background: transparent;
+            padding: 7px 14px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        .btn-camarero.activo-c1 {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+        .btn-camarero.activo-c2 {
+            background: #7c3aed;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+        }
+
         .estado-badge {
             font-size: 0.85rem;
             font-weight: 700;
@@ -58,7 +90,6 @@
             color: #10b981;
         }
 
-        /* Botón curioso y animado para entrar en Cocina */
         @keyframes campana-ring {
             0%, 100% { transform: rotate(0deg); }
             15% { transform: rotate(18deg); }
@@ -105,7 +136,6 @@
             letter-spacing: 0.8px;
         }
 
-        /* Botón de Caja y Recaudación del Día */
         .btn-caja-dia {
             display: inline-flex;
             align-items: center;
@@ -126,7 +156,7 @@
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
         }
 
-        /* Modal de Caja y Cierre del Día */
+        /* Modales (Caja y Añadir Producto) */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -142,7 +172,7 @@
         .modal-caja {
             background: #ffffff;
             width: 100%;
-            max-width: 580px;
+            max-width: 600px;
             border-radius: 18px;
             padding: 22px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
@@ -173,7 +203,7 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         @media (max-width: 520px) {
             .resumen-cajas-grid { grid-template-columns: 1fr; }
@@ -192,12 +222,14 @@
         .caja-kpi-valor { font-size: 1.35rem; font-weight: 900; margin-top: 4px; }
         .desglose-zonas-caja {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-around;
+            gap: 8px;
             background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 10px;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: 700;
             margin-bottom: 14px;
         }
@@ -236,7 +268,7 @@
         }
         .btn-cierre-z.confirmando { background: #991b1b; }
 
-        /* Panel superior de Plano de Sala: 6 Interiores, 6 Exteriores y 5 Taburetes */
+        /* Plano de sala */
         .plano-sala {
             max-width: 1320px;
             margin: 0 auto 18px auto;
@@ -323,10 +355,7 @@
             color: #ffffff;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
-        .puesto-nombre {
-            font-weight: 800;
-            font-size: 0.85rem;
-        }
+        .puesto-nombre { font-weight: 800; font-size: 0.85rem; }
         .puesto-precio {
             font-size: 0.82rem;
             font-weight: 800;
@@ -345,12 +374,12 @@
             color: #ffffff;
         }
 
-        /* Layout inferior: Carta + Comanda */
+        /* Layout inferior */
         .layout {
             max-width: 1320px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1.4fr 1fr;
+            grid-template-columns: 1.55fr 1fr;
             gap: 20px;
         }
         @media (max-width: 850px) {
@@ -370,13 +399,101 @@
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
-        .categoria-titulo {
-            font-size: 0.95rem;
-            font-weight: 700;
+
+        /* Cabecera de la Carta + Botón Añadir Producto */
+        .carta-top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+        .carta-top-bar h2 {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .btn-add-producto-carta {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: #ffffff;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-add-producto-carta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(37, 99, 235, 0.45);
+        }
+
+        /* Pestañas Rápidas Estilo Carta (Todas / Comidas / Bebidas) */
+        .carta-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab-carta {
+            border: 1px solid var(--border);
+            background: #f8fafc;
             color: var(--text-secondary);
-            margin: 15px 0 8px 0;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 0.86rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .tab-carta.activa {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        /* Bloques Grandes Estilo Carta (Comidas vs Bebidas) */
+        .bloque-carta {
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+        .bloque-comidas {
+            background: #fffaf5;
+            border: 1px solid #fed7aa;
+        }
+        .bloque-bebidas {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+        }
+        .bloque-carta-titulo {
+            font-size: 1.05rem;
+            font-weight: 900;
+            margin: 0 0 10px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bloque-comidas .bloque-carta-titulo { color: #c2410c; }
+        .bloque-bebidas .bloque-carta-titulo { color: #0369a1; }
+
+        .subcategoria-titulo {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #475569;
+            margin: 14px 0 8px 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .grid-productos {
             display: grid;
@@ -384,7 +501,8 @@
             gap: 10px;
         }
         .btn-producto {
-            background: #f8fafc;
+            position: relative;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
             padding: 12px 10px;
@@ -395,6 +513,7 @@
             flex-direction: column;
             justify-content: space-between;
             min-height: 76px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
         .btn-producto:hover {
             border-color: var(--primary);
@@ -402,8 +521,29 @@
             transform: translateY(-1px);
         }
         .btn-producto:active { transform: scale(0.97); }
-        .prod-nombre { font-weight: 700; font-size: 0.92rem; color: var(--text-primary); }
+        .prod-nombre { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); padding-right: 16px; }
         .prod-precio { font-weight: 800; font-size: 0.9rem; color: var(--primary); margin-top: 6px; }
+        .btn-borrar-prod-custom {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 0.7rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-borrar-prod-custom:hover {
+            background: #dc2626;
+            color: #ffffff;
+        }
 
         .mesa-seleccionada-banner {
             background: #eff6ff;
@@ -412,14 +552,16 @@
             padding: 10px 14px;
             border-radius: 10px;
             font-weight: 800;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             margin-bottom: 12px;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
+            gap: 6px;
         }
         label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border);
@@ -502,6 +644,16 @@
             align-items: center;
             gap: 10px;
         }
+        .tag-camarero {
+            display: inline-block;
+            font-size: 0.74rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 4px;
+        }
+        .tag-c1 { background: #dbeafe; color: #1d4ed8; }
+        .tag-c2 { background: #ede9fe; color: #6d28d9; }
         .btn-completar {
             background: var(--success);
             color: #fff;
@@ -519,6 +671,12 @@
     <div class="header">
         <h1>📱 GastroPOS - Comandero</h1>
         <div class="header-actions">
+            <!-- SELECTOR DE TABLET: CAMARERO 1 O CAMARERO 2 -->
+            <div class="selector-camarero" title="Elige qué camarero usa esta tablet">
+                <button type="button" id="btn-c1" class="btn-camarero activo-c1" onclick="seleccionarCamarero('Camarero 1')">🧑‍💼 Camarero 1</button>
+                <button type="button" id="btn-c2" class="btn-camarero" onclick="seleccionarCamarero('Camarero 2')">👩‍💼 Camarero 2</button>
+            </div>
+
             <button type="button" class="btn-caja-dia" onclick="abrirModalCaja()">
                 <span>💰 Caja:</span>
                 <span id="badge-caja-rapida">0,00 €</span>
@@ -529,6 +687,43 @@
                 <span class="badge-vivo">Ver Pantalla →</span>
             </a>
             <span id="estado-conexion" class="estado-badge">⏳ Conectando con Render...</span>
+        </div>
+    </div>
+
+    <!-- MODAL PARA AÑADIR NUEVO PRODUCTO A LA CARTA -->
+    <div id="modal-nuevo-producto" class="modal-overlay" onclick="if(event.target===this) cerrarModalNuevoProducto()">
+        <div class="modal-caja" style="max-width: 480px;">
+            <div class="modal-caja-header">
+                <h2>➕ Añadir Nuevo Producto a la Carta</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="cerrarModalNuevoProducto()">✕</button>
+            </div>
+
+            <form id="form-nuevo-producto" onsubmit="guardarNuevoProductoCarta(event)">
+                <label for="nuevo-prod-nombre">Nombre del Producto (con emoji opcional)</label>
+                <input type="text" id="nuevo-prod-nombre" placeholder="Ej: 🥩 Entrecot a la Brasa o 🍺 Jarra Cerveza" required>
+
+                <label for="nuevo-prod-precio">Precio (€)</label>
+                <input type="number" id="nuevo-prod-precio" step="0.05" min="0.10" placeholder="Ej: 12.50" required>
+
+                <label for="nuevo-prod-categoria">Sección de la Carta</label>
+                <select id="nuevo-prod-categoria" required>
+                    <optgroup label="🍽️ COMIDAS (Van a Cocina)">
+                        <option value="raciones">🍟 Raciones y Entrantes</option>
+                        <option value="bocatas">🥖 Bocatas y Hamburguesas</option>
+                        <option value="combinados">🍳 Platos Combinados</option>
+                    </optgroup>
+                    <optgroup label="🍹 BEBIDAS (Van a Barra)">
+                        <option value="refrescos">🥤 Refrescos y Aguas</option>
+                        <option value="cafes">☕ Cafés e Infusiones</option>
+                        <option value="alcohol">🍺 Cervezas, Vinos y Bebidas Alcohólicas</option>
+                    </optgroup>
+                </select>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                    <button type="button" onclick="cerrarModalNuevoProducto()" style="background:#e2e8f0; color:#0f172a; border:none; padding:11px 16px; border-radius:10px; font-weight:800; cursor:pointer;">Cancelar</button>
+                    <button type="submit" style="background:#10b981; color:#ffffff; border:none; padding:11px 18px; border-radius:10px; font-weight:800; cursor:pointer;">💾 Guardar en la Carta</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -556,8 +751,10 @@
             </div>
 
             <div class="desglose-zonas-caja">
-                <span>🍔 Cocina Cobrado: <strong id="kpi-cobrado-comida">0,00 €</strong></span>
-                <span>🍹 Barra Cobrado: <strong id="kpi-cobrado-barra">0,00 €</strong></span>
+                <span>🍔 Cocina: <strong id="kpi-cobrado-comida">0,00 €</strong></span>
+                <span>🍹 Barra: <strong id="kpi-cobrado-barra">0,00 €</strong></span>
+                <span>🧑‍💼 Cam. 1: <strong id="kpi-cobrado-c1">0,00 €</strong></span>
+                <span>👩‍💼 Cam. 2: <strong id="kpi-cobrado-c2">0,00 €</strong></span>
                 <span>🧾 Tickets: <strong id="kpi-num-tickets">0</strong></span>
             </div>
 
@@ -576,11 +773,10 @@
     <!-- PLANO DE SALA CON PRECIOS POR SITIO -->
     <div class="plano-sala">
         <div class="plano-header">
-            <h2>🪑 Selección de Mesa o Taburete (Con importe activo en cada sitio)</h2>
+            <h2>🪑 Selección de Mesa o Taburete (Sincronizado entre ambas tablets)</h2>
             <span id="total-sala-global" class="total-sala-badge">Total Sala Activa: 0,00 €</span>
         </div>
         <div class="zonas-grid">
-            <!-- 6 MESAS INTERIORES -->
             <div class="zona-box">
                 <div class="zona-titulo">
                     <span>🏠 Mesas Interiores (6)</span>
@@ -589,7 +785,6 @@
                 <div id="grid-interior" class="puestos-grid"></div>
             </div>
 
-            <!-- 6 MESAS EXTERIORES -->
             <div class="zona-box">
                 <div class="zona-titulo">
                     <span>☀️ Mesas Exteriores (6)</span>
@@ -598,7 +793,6 @@
                 <div id="grid-exterior" class="puestos-grid"></div>
             </div>
 
-            <!-- 5 TABURETES DE BARRA -->
             <div class="zona-box">
                 <div class="zona-titulo">
                     <span>🍺 Taburetes de Barra (5)</span>
@@ -610,70 +804,56 @@
     </div>
 
     <div class="layout">
-        <!-- COLUMNA IZQUIERDA: CARTA DE PRODUCTOS CON PRECIOS -->
+        <!-- COLUMNA IZQUIERDA: CARTA ORGANIZADA POR SECCIONES -->
         <div class="panel">
-            <h2>🍽️ Carta de Productos (Pulsa para añadir)</h2>
-
-            <div class="categoria-titulo">🍔 Comidas (Cocina)</div>
-            <div class="grid-productos">
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Hamburguesa Completa', 9.50, 'comida')">
-                    <span class="prod-nombre">🍔 Hamburguesa Completa</span>
-                    <span class="prod-precio">9,50 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Patatas Bravas', 5.50, 'comida')">
-                    <span class="prod-nombre">🍟 Patatas Bravas</span>
-                    <span class="prod-precio">5,50 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Bocadillo Lomo Queso', 6.80, 'comida')">
-                    <span class="prod-nombre">🥖 Bocadillo Lomo Queso</span>
-                    <span class="prod-precio">6,80 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Ensalada César', 8.00, 'comida')">
-                    <span class="prod-nombre">🥗 Ensalada César</span>
-                    <span class="prod-precio">8,00 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Croquetas Caseras (6u)', 7.20, 'comida')">
-                    <span class="prod-nombre">🥟 Croquetas Caseras</span>
-                    <span class="prod-precio">7,20 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Pizza Margarita', 10.50, 'comida')">
-                    <span class="prod-nombre">🍕 Pizza Margarita</span>
-                    <span class="prod-precio">10,50 €</span>
-                </button>
+            <div class="carta-top-bar">
+                <h2>📖 Carta del Restaurante</h2>
+                <button type="button" class="btn-add-producto-carta" onclick="abrirModalNuevoProducto()">➕ Añadir Producto</button>
             </div>
 
-            <div class="categoria-titulo">🍹 Bebidas (Barra)</div>
-            <div class="grid-productos">
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Caña Cerveza', 2.50, 'barra')">
-                    <span class="prod-nombre">🍺 Caña Cerveza</span>
-                    <span class="prod-precio">2,50 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Refresco Cola', 2.80, 'barra')">
-                    <span class="prod-nombre">🥤 Refresco Cola</span>
-                    <span class="prod-precio">2,80 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Agua Mineral 50cl', 2.00, 'barra')">
-                    <span class="prod-nombre">💧 Agua Mineral</span>
-                    <span class="prod-precio">2,00 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Copa Vino Rioja', 3.50, 'barra')">
-                    <span class="prod-nombre">🍷 Copa Vino Rioja</span>
-                    <span class="prod-precio">3,50 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Café con Leche', 1.80, 'barra')">
-                    <span class="prod-nombre">☕ Café con Leche</span>
-                    <span class="prod-precio">1,80 €</span>
-                </button>
-                <button type="button" class="btn-producto" onclick="agregarAlCarrito('Combinado / Copa', 7.50, 'barra')">
-                    <span class="prod-nombre">🍹 Combinado / Copa</span>
-                    <span class="prod-precio">7,50 €</span>
-                </button>
+            <!-- Pestañas de filtro rápido -->
+            <div class="carta-tabs">
+                <button type="button" class="tab-carta activa" id="tab-todo" onclick="filtrarVistaCarta('todo')">📋 Carta Completa</button>
+                <button type="button" class="tab-carta" id="tab-comidas" onclick="filtrarVistaCarta('comidas')">🍽️ Solo Comidas</button>
+                <button type="button" class="tab-carta" id="tab-bebidas" onclick="filtrarVistaCarta('bebidas')">🍹 Solo Bebidas</button>
+            </div>
+
+            <!-- SECCIÓN 1: COMIDAS (COCINA) -->
+            <div id="seccion-carta-comidas" class="bloque-carta bloque-comidas">
+                <div class="bloque-carta-titulo">
+                    <span>🍽️ COMIDAS (Envío directo a Cocina)</span>
+                </div>
+
+                <div class="subcategoria-titulo">🍟 Raciones, Entrantes y Ensaladas</div>
+                <div id="grid-cat-raciones" class="grid-productos"></div>
+
+                <div class="subcategoria-titulo">🥖 Bocatas y Hamburguesas</div>
+                <div id="grid-cat-bocatas" class="grid-productos"></div>
+
+                <div class="subcategoria-titulo">🍳 Platos Combinados</div>
+                <div id="grid-cat-combinados" class="grid-productos"></div>
+            </div>
+
+            <!-- SECCIÓN 2: BEBIDAS (BARRA) -->
+            <div id="seccion-carta-bebidas" class="bloque-carta bloque-bebidas">
+                <div class="bloque-carta-titulo">
+                    <span>🍹 BEBIDAS (Envío directo a Barra)</span>
+                </div>
+
+                <div class="subcategoria-titulo">🥤 Refrescos y Aguas</div>
+                <div id="grid-cat-refrescos" class="grid-productos"></div>
+
+                <div class="subcategoria-titulo">☕ Cafés e Infusiones</div>
+                <div id="grid-cat-cafes" class="grid-productos"></div>
+
+                <div class="subcategoria-titulo">🍺 Cervezas, Vinos y Bebidas Alcohólicas</div>
+                <div id="grid-cat-alcohol" class="grid-productos"></div>
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA: CARRITO ACTUAL Y COMANDAS EN CURSO -->
+        <!-- COLUMNA DERECHA: COMANDA ACTUAL -->
         <div class="panel">
-            <h2>🧾 Comanda Actual</h2>
+            <h2>🧾 Comanda Actual (<span id="titulo-camarero-comanda">Camarero 1</span>)</h2>
 
             <div class="mesa-seleccionada-banner">
                 <span id="etiqueta-mesa-activa">📍 Interior - Mesa 1</span>
@@ -711,33 +891,199 @@
               username: '000000002111173653',
               credential: 'g91nvjMpDOU2UYFJ6NDB0V48Alo='
 
-
             }
         ],
         iceCandidatePoolSize: 10
     };
     window.configuracionICE = configuracionICE;
 
+        // =========================================================================
+        // CATÁLOGO DE PRODUCTOS ESTILO CARTA + PRODUCTOS PERSONALIZADOS
+        // =========================================================================
+        var PRODUCTOS_BASE = [
+            // COMIDAS: Raciones y Entrantes
+            { id: 'b1', nombre: '🍟 Patatas Bravas', precio: 5.50, categoria: 'raciones', tipo: 'comida' },
+            { id: 'b2', nombre: '🥟 Croquetas Caseras (6u)', precio: 7.20, categoria: 'raciones', tipo: 'comida' },
+            { id: 'b3', nombre: '🥗 Ensalada César', precio: 8.00, categoria: 'raciones', tipo: 'comida' },
+            { id: 'b4', nombre: '🦑 Calamares a la Romana', precio: 9.00, categoria: 'raciones', tipo: 'comida' },
+
+            // COMIDAS: Bocatas y Hamburguesas
+            { id: 'b5', nombre: '🥖 Bocata Lomo y Queso', precio: 6.80, categoria: 'bocatas', tipo: 'comida' },
+            { id: 'b6', nombre: '🥖 Bocata Bacon Queso', precio: 6.50, categoria: 'bocatas', tipo: 'comida' },
+            { id: 'b7', nombre: '🥖 Bocata Tortilla Patata', precio: 6.00, categoria: 'bocatas', tipo: 'comida' },
+            { id: 'b8', nombre: '🍔 Hamburguesa Completa', precio: 9.50, categoria: 'bocatas', tipo: 'comida' },
+
+            // COMIDAS: Platos Combinados
+            { id: 'b9', nombre: '🍳 Combinado Lomo, Huevo y Patatas', precio: 11.50, categoria: 'combinados', tipo: 'comida' },
+            { id: 'b10', nombre: '🥩 Combinado Pechuga Plancha y Ensalada', precio: 11.00, categoria: 'combinados', tipo: 'comida' },
+            { id: 'b11', nombre: '🥩 Combinado Entrecot con Patatas', precio: 14.50, categoria: 'combinados', tipo: 'comida' },
+            { id: 'b12', nombre: '🌭 Combinado Salchichas, Bacon y Huevos', precio: 10.50, categoria: 'combinados', tipo: 'comida' },
+
+            // BEBIDAS: Refrescos y Aguas
+            { id: 'b13', nombre: '🥤 Refresco Cola', precio: 2.80, categoria: 'refrescos', tipo: 'barra' },
+            { id: 'b14', nombre: '🍊 Refresco Naranja / Limón', precio: 2.80, categoria: 'refrescos', tipo: 'barra' },
+            { id: 'b15', nombre: '💧 Agua Mineral 50cl', precio: 2.00, categoria: 'refrescos', tipo: 'barra' },
+            { id: 'b16', nombre: '🫧 Agua con Gas', precio: 2.30, categoria: 'refrescos', tipo: 'barra' },
+
+            // BEBIDAS: Cafés e Infusiones
+            { id: 'b17', nombre: '☕ Café Solo', precio: 1.60, categoria: 'cafes', tipo: 'barra' },
+            { id: 'b18', nombre: '☕ Café Cortado', precio: 1.70, categoria: 'cafes', tipo: 'barra' },
+            { id: 'b19', nombre: '☕ Café con Leche', precio: 1.80, categoria: 'cafes', tipo: 'barra' },
+            { id: 'b20', nombre: '🍵 Infusión / Té', precio: 1.80, categoria: 'cafes', tipo: 'barra' },
+
+            // BEBIDAS: Cervezas, Vinos y Bebidas Alcohólicas
+            { id: 'b21', nombre: '🍺 Caña Cerveza', precio: 2.50, categoria: 'alcohol', tipo: 'barra' },
+            { id: 'b22', nombre: '🍺 Jarra / Tercios Cerveza', precio: 3.20, categoria: 'alcohol', tipo: 'barra' },
+            { id: 'b23', nombre: '🍷 Copa Vino Rioja / Ribera', precio: 3.50, categoria: 'alcohol', tipo: 'barra' },
+            { id: 'b24', nombre: '🍸 Combinado / Copa Nacional', precio: 7.50, categoria: 'alcohol', tipo: 'barra' },
+            { id: 'b25', nombre: '🥃 Chupito Licor', precio: 2.50, categoria: 'alcohol', tipo: 'barra' }
+        ];
+
+        function obtenerProductosPersonalizados() {
+            try {
+                const raw = localStorage.getItem('gastropos_productos_custom');
+                const arr = JSON.parse(raw);
+                return Array.isArray(arr) ? arr : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function guardarProductosPersonalizados(lista) {
+            localStorage.setItem('gastropos_productos_custom', JSON.stringify(lista));
+        }
+
+        function renderizarCartaCompleta() {
+            const custom = obtenerProductosPersonalizados();
+            const todos = [...PRODUCTOS_BASE, ...custom];
+
+            const contenedores = {
+                raciones: document.getElementById('grid-cat-raciones'),
+                bocatas: document.getElementById('grid-cat-bocatas'),
+                combinados: document.getElementById('grid-cat-combinados'),
+                refrescos: document.getElementById('grid-cat-refrescos'),
+                cafes: document.getElementById('grid-cat-cafes'),
+                alcohol: document.getElementById('grid-cat-alcohol')
+            };
+
+            Object.values(contenedores).forEach(el => { if (el) el.innerHTML = ''; });
+
+            todos.forEach(prod => {
+                const grid = contenedores[prod.categoria];
+                if (!grid) return;
+
+                const nombreEscapado = prod.nombre.replace(/'/g, "\\'");
+                const esCustom = String(prod.id).startsWith('custom_');
+
+                const btnBorrarHTML = esCustom
+                    ? `<button type="button" class="btn-borrar-prod-custom" title="Eliminar producto de la carta" onclick="event.stopPropagation(); eliminarProductoCustom('${prod.id}')">✕</button>`
+                    : '';
+
+                grid.innerHTML += `
+                    <div class="btn-producto" onclick="agregarAlCarrito('${nombreEscapado}', ${Number(prod.precio)}, '${prod.tipo}')">
+                        ${btnBorrarHTML}
+                        <span class="prod-nombre">${prod.nombre}</span>
+                        <span class="prod-precio">${Number(prod.precio).toFixed(2)} €</span>
+                    </div>
+                `;
+            });
+        }
+
+        function filtrarVistaCarta(filtro) {
+            const secComidas = document.getElementById('seccion-carta-comidas');
+            const secBebidas = document.getElementById('seccion-carta-bebidas');
+
+            document.getElementById('tab-todo').classList.toggle('activa', filtro === 'todo');
+            document.getElementById('tab-comidas').classList.toggle('activa', filtro === 'comidas');
+            document.getElementById('tab-bebidas').classList.toggle('activa', filtro === 'bebidas');
+
+            secComidas.style.display = (filtro === 'todo' || filtro === 'comidas') ? 'block' : 'none';
+            secBebidas.style.display = (filtro === 'todo' || filtro === 'bebidas') ? 'block' : 'none';
+        }
+
+        function abrirModalNuevoProducto() {
+            document.getElementById('form-nuevo-producto').reset();
+            document.getElementById('modal-nuevo-producto').classList.add('abierto');
+            setTimeout(() => document.getElementById('nuevo-prod-nombre').focus(), 50);
+        }
+
+        function cerrarModalNuevoProducto() {
+            document.getElementById('modal-nuevo-producto').classList.remove('abierto');
+        }
+
+        function guardarNuevoProductoCarta(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nuevo-prod-nombre').value.trim();
+            const precio = parseFloat(document.getElementById('nuevo-prod-precio').value);
+            const categoria = document.getElementById('nuevo-prod-categoria').value;
+
+            if (!nombre || isNaN(precio) || precio <= 0) {
+                mostrarAviso('⚠️ Introduce un nombre y un precio válido.', '#f59e0b');
+                return;
+            }
+
+            const categoriasBebida = ['refrescos', 'cafes', 'alcohol'];
+            const tipoDestino = categoriasBebida.includes(categoria) ? 'barra' : 'comida';
+
+            const lista = obtenerProductosPersonalizados();
+            lista.push({
+                id: 'custom_' + Date.now(),
+                nombre: nombre,
+                precio: precio,
+                categoria: categoria,
+                tipo: tipoDestino
+            });
+            guardarProductosPersonalizados(lista);
+            renderizarCartaCompleta();
+            cerrarModalNuevoProducto();
+            mostrarAviso(`✅ "${nombre}" añadido a la carta (${precio.toFixed(2)} €).`, '#10b981');
+        }
+
+        function eliminarProductoCustom(id) {
+            const lista = obtenerProductosPersonalizados().filter(p => p.id !== id);
+            guardarProductosPersonalizados(lista);
+            renderizarCartaCompleta();
+            mostrarAviso('🗑️ Producto eliminado de la carta.', '#64748b');
+        }
 
         // =========================================================================
-        // 2. DEFINICIÓN DE LAS 6 MESAS INTERIORES, 6 EXTERIORES Y 5 TABURETES
+        // GESTIÓN DE CAMARERO ACTIVO POR TABLET (GUARDADO EN LOCALSTORAGE)
+        // =========================================================================
+        var camareroActivo = localStorage.getItem('gastropos_camarero') || 'Camarero 1';
+
+        function seleccionarCamarero(nombre) {
+            camareroActivo = nombre;
+            localStorage.setItem('gastropos_camarero', nombre);
+            actualizarUIEmpleado();
+            mostrarAviso(`✅ Tablet configurada como ${nombre}`, nombre === 'Camarero 1' ? '#2563eb' : '#7c3aed');
+        }
+
+        function actualizarUIEmpleado() {
+            const btn1 = document.getElementById('btn-c1');
+            const btn2 = document.getElementById('btn-c2');
+            const titulo = document.getElementById('titulo-camarero-comanda');
+
+            btn1.className = 'btn-camarero' + (camareroActivo === 'Camarero 1' ? ' activo-c1' : '');
+            btn2.className = 'btn-camarero' + (camareroActivo === 'Camarero 2' ? ' activo-c2' : '');
+            if (titulo) titulo.textContent = camareroActivo;
+        }
+
+        // =========================================================================
+        // DEFINICIÓN DE LAS 6 MESAS INTERIORES, 6 EXTERIORES Y 5 TABURETES
         // =========================================================================
         var PUESTOS_SALA = [
-            // 6 Mesas Interiores
             { id: 'Interior - Mesa 1', corto: 'Mesa Int. 1', zona: 'interior' },
             { id: 'Interior - Mesa 2', corto: 'Mesa Int. 2', zona: 'interior' },
             { id: 'Interior - Mesa 3', corto: 'Mesa Int. 3', zona: 'interior' },
             { id: 'Interior - Mesa 4', corto: 'Mesa Int. 4', zona: 'interior' },
             { id: 'Interior - Mesa 5', corto: 'Mesa Int. 5', zona: 'interior' },
             { id: 'Interior - Mesa 6', corto: 'Mesa Int. 6', zona: 'interior' },
-            // 6 Mesas Exteriores
             { id: 'Exterior - Mesa 1', corto: 'Mesa Ext. 1', zona: 'exterior' },
             { id: 'Exterior - Mesa 2', corto: 'Mesa Ext. 2', zona: 'exterior' },
             { id: 'Exterior - Mesa 3', corto: 'Mesa Ext. 3', zona: 'exterior' },
             { id: 'Exterior - Mesa 4', corto: 'Mesa Ext. 4', zona: 'exterior' },
             { id: 'Exterior - Mesa 5', corto: 'Mesa Ext. 5', zona: 'exterior' },
             { id: 'Exterior - Mesa 6', corto: 'Mesa Ext. 6', zona: 'exterior' },
-            // 5 Taburetes de Barra
             { id: 'Barra - Taburete 1', corto: 'Taburete 1', zona: 'barra' },
             { id: 'Barra - Taburete 2', corto: 'Taburete 2', zona: 'barra' },
             { id: 'Barra - Taburete 3', corto: 'Taburete 3', zona: 'barra' },
@@ -766,13 +1112,8 @@
             const gridExt = document.getElementById('grid-exterior');
             const gridBar = document.getElementById('grid-taburetes');
 
-            let htmlInt = '';
-            let htmlExt = '';
-            let htmlBar = '';
-
-            let sumInt = 0;
-            let sumExt = 0;
-            let sumBar = 0;
+            let htmlInt = '', htmlExt = '', htmlBar = '';
+            let sumInt = 0, sumExt = 0, sumBar = 0;
 
             PUESTOS_SALA.forEach(puesto => {
                 const importe = totalesPorPuesto[puesto.id] || 0;
@@ -808,7 +1149,6 @@
             actualizarCabeceraMesa();
         }
 
-        // Extrae el importe en euros de un pedido (ya sea por items o leyendo el texto "Total: XX.XX €")
         function calcularImportePedido(pedido) {
             if (Array.isArray(pedido.items) && pedido.items.length > 0) {
                 return pedido.items.reduce((acc, it) => acc + ((Number(it.precio) || 0) * (Number(it.cantidad) || 1)), 0);
@@ -818,16 +1158,9 @@
             if (matchTotal) {
                 return parseFloat(matchTotal[1].replace(',', '.')) || 0;
             }
-            const preciosSueltos = [...texto.matchAll(/\(([\d.,]+)\s*€\)/g)];
-            if (preciosSueltos.length > 0) {
-                return preciosSueltos.reduce((acc, m) => acc + (parseFloat(m[1].replace(',', '.')) || 0), 0);
-            }
             return 0;
         }
 
-        // =========================================================================
-        // 3. GESTIÓN DEL CARRITO CON PRECIOS
-        // =========================================================================
         function agregarAlCarrito(nombre, precio, tipo = 'comida') {
             const precioNum = Number(precio) || 0;
             const existente = carrito.find(item => item.nombre === nombre && item.tipo === tipo);
@@ -859,7 +1192,7 @@
             const totalEl = document.getElementById('carrito-total');
 
             if (carrito.length === 0) {
-                listaEl.innerHTML = '<div style="color:#64748b; text-align:center; padding:35px 10px;">Pulsa los productos de la izquierda para añadirlos</div>';
+                listaEl.innerHTML = '<div style="color:#64748b; text-align:center; padding:35px 10px;">Pulsa los productos de la carta para añadirlos</div>';
                 totalEl.textContent = '0,00 €';
                 return;
             }
@@ -890,9 +1223,6 @@
             totalEl.textContent = `${totalGeneral.toFixed(2)} €`;
         }
 
-        // =========================================================================
-        // 4. ENVÍO A RENDER SEPARANDO BARRA Y COCINA CON TODOS LOS PRECIOS
-        // =========================================================================
         async function enviarComanda() {
             const notas = document.getElementById('notas').value.trim();
 
@@ -916,6 +1246,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         mesa_id: puestoSeleccionado,
+                        camarero: camareroActivo,
                         tipo: 'comida',
                         detalles: textoCocina,
                         carrito: itemsCocina
@@ -934,6 +1265,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         mesa_id: puestoSeleccionado,
+                        camarero: camareroActivo,
                         tipo: 'barra',
                         detalles: textoBarra,
                         carrito: itemsBarra
@@ -949,7 +1281,7 @@
                     carrito = [];
                     document.getElementById('notas').value = '';
                     actualizarVistaCarrito();
-                    mostrarAviso(`✅ Pedido enviado para ${puestoSeleccionado}.`, '#10b981');
+                    mostrarAviso(`✅ (${camareroActivo}) Pedido enviado para ${puestoSeleccionado}.`, '#10b981');
                     cargarPedidosAdmin();
                 } else {
                     mostrarAviso('❌ El servidor devolvió un error al registrar el pedido.', '#ef4444');
@@ -960,9 +1292,6 @@
             }
         }
 
-        // =========================================================================
-        // 5. SINCRONIZACIÓN DE COMANDAS ACTIVAS Y CÁLCULO DE PRECIOS POR SITIO
-        // =========================================================================
         async function cargarPedidosAdmin() {
             const contenedor = document.getElementById('lista-pedidos');
             const estado = document.getElementById('estado-conexion');
@@ -976,7 +1305,6 @@
                 estado.style.color = '#10b981';
                 estado.style.background = '#ecfdf5';
 
-                // Recalcular importe total activo en cada mesa/taburete
                 const nuevosTotales = {};
                 pedidos.forEach(p => {
                     const sitio = String(p.mesa_id || '');
@@ -991,17 +1319,23 @@
                     return;
                 }
 
-                contenedor.innerHTML = pedidos.map(p => `
-                    <div class="pedido-card">
-                        <div>
-                            <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">
-                                📍 ${p.mesa_id} <span style="color:#64748b; font-weight:400;">(${p.created_at || ''})</span>
+                contenedor.innerHTML = pedidos.map(p => {
+                    const cam = p.camarero || 'Camarero 1';
+                    const claseCam = cam === 'Camarero 2' ? 'tag-c2' : 'tag-c1';
+                    return `
+                        <div class="pedido-card">
+                            <div>
+                                <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">
+                                    📍 ${p.mesa_id}
+                                    <span class="tag-camarero ${claseCam}">${cam}</span>
+                                    <span style="color:#64748b; font-weight:400;">(${p.created_at || ''})</span>
+                                </div>
+                                <div style="font-size:0.88rem; color:#334155;">${p.detalles}</div>
                             </div>
-                            <div style="font-size:0.88rem; color:#334155;">${p.detalles}</div>
+                            <button type="button" class="btn-completar" onclick="completarPedido('${p.id}')">✔ Cobrado / Servido</button>
                         </div>
-                        <button type="button" class="btn-completar" onclick="completarPedido('${p.id}')">✔ Cobrado / Servido</button>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
                 estado.textContent = '🔴 Sin conexión con Render';
                 estado.style.color = '#ef4444';
@@ -1024,9 +1358,6 @@
             }
         }
 
-        // =========================================================================
-        // 6. CONTROL DE CAJA Y RECAUDACIÓN TOTAL DEL DÍA
-        // =========================================================================
         var confirmarCierrePendiente = false;
 
         async function actualizarResumenCaja() {
@@ -1049,6 +1380,8 @@
                     document.getElementById('kpi-recaudacion-total').textContent = `${totalDia.toFixed(2)} €`;
                     document.getElementById('kpi-cobrado-comida').textContent = `${(Number(data.cobradoComida) || 0).toFixed(2)} €`;
                     document.getElementById('kpi-cobrado-barra').textContent = `${(Number(data.cobradoBarra) || 0).toFixed(2)} €`;
+                    document.getElementById('kpi-cobrado-c1').textContent = `${(Number(data.cobradoCamarero1) || 0).toFixed(2)} €`;
+                    document.getElementById('kpi-cobrado-c2').textContent = `${(Number(data.cobradoCamarero2) || 0).toFixed(2)} €`;
                     document.getElementById('kpi-num-tickets').textContent = String(data.totalTicketsCobrados || 0);
 
                     const listaEl = document.getElementById('historial-caja-lista');
@@ -1059,7 +1392,7 @@
                         listaEl.innerHTML = historial.map(h => `
                             <div class="historial-item">
                                 <div>
-                                    <strong>${h.mesa_id}</strong> <span style="color:#64748b;">(${h.hora_cobro || ''})</span>
+                                    <strong>${h.mesa_id}</strong> · <span style="font-weight:700; color:#475569;">${h.camarero || 'Camarero 1'}</span> <span style="color:#64748b;">(${h.hora_cobro || ''})</span>
                                     <div style="font-size:0.78rem; color:#475569;">${h.detalles}</div>
                                 </div>
                                 <strong style="color:#059669; white-space:nowrap; margin-left:10px;">+${(Number(h.importe) || 0).toFixed(2)} €</strong>
@@ -1124,6 +1457,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            renderizarCartaCompleta();
+            actualizarUIEmpleado();
             renderizarPlanoSala();
             actualizarVistaCarrito();
             cargarPedidosAdmin();
