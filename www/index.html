@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -105,6 +104,137 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
+
+        /* Botón de Caja y Recaudación del Día */
+        .btn-caja-dia {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-caja-dia:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Modal de Caja y Cierre del Día */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(3px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        .modal-overlay.abierto { display: flex; }
+        .modal-caja {
+            background: #ffffff;
+            width: 100%;
+            max-width: 580px;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-caja-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .modal-caja-header h2 { margin: 0; font-size: 1.25rem; }
+        .btn-cerrar-modal {
+            background: #f1f5f9;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-weight: 800;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .resumen-cajas-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 520px) {
+            .resumen-cajas-grid { grid-template-columns: 1fr; }
+        }
+        .caja-kpi {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .caja-kpi.verde { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+        .caja-kpi.ambar { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        .caja-kpi.azul { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+        .caja-kpi-titulo { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+        .caja-kpi-valor { font-size: 1.35rem; font-weight: 900; margin-top: 4px; }
+        .desglose-zonas-caja {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        .historial-caja-lista {
+            max-height: 210px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            background: #f8fafc;
+            margin-bottom: 16px;
+        }
+        .historial-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 6px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.86rem;
+        }
+        .historial-item:last-child { border-bottom: none; }
+        .modal-caja-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn-cierre-z {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 11px 16px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-cierre-z.confirmando { background: #991b1b; }
 
         /* Panel superior de Plano de Sala: 6 Interiores, 6 Exteriores y 5 Taburetes */
         .plano-sala {
@@ -389,12 +519,57 @@
     <div class="header">
         <h1>📱 GastroPOS - Comandero</h1>
         <div class="header-actions">
+            <button type="button" class="btn-caja-dia" onclick="abrirModalCaja()">
+                <span>💰 Caja:</span>
+                <span id="badge-caja-rapida">0,00 €</span>
+            </button>
             <a href="cocina.html" class="btn-cocina-curioso" title="Abrir monitor de Cocina y Barra">
                 <span class="icono-campana">🔔</span>
                 <span>¡Oído Cocina!</span>
                 <span class="badge-vivo">Ver Pantalla →</span>
             </a>
             <span id="estado-conexion" class="estado-badge">⏳ Conectando con Render...</span>
+        </div>
+    </div>
+
+    <!-- MODAL DE CAJA Y RECAUDACIÓN TOTAL DEL DÍA -->
+    <div id="modal-caja-overlay" class="modal-overlay" onclick="if(event.target===this) cerrarModalCaja()">
+        <div class="modal-caja">
+            <div class="modal-caja-header">
+                <h2>💰 Caja y Recaudación del Día</h2>
+                <button type="button" class="btn-cerrar-modal" onclick="cerrarModalCaja()">✕</button>
+            </div>
+
+            <div class="resumen-cajas-grid">
+                <div class="caja-kpi verde">
+                    <div class="caja-kpi-titulo">💵 En Caja (Cobrado)</div>
+                    <div id="kpi-en-caja" class="caja-kpi-valor">0,00 €</div>
+                </div>
+                <div class="caja-kpi ambar">
+                    <div class="caja-kpi-titulo">⏳ Pendiente en Mesas</div>
+                    <div id="kpi-pendiente-mesas" class="caja-kpi-valor">0,00 €</div>
+                </div>
+                <div class="caja-kpi azul">
+                    <div class="caja-kpi-titulo">📊 Recaudación Total Día</div>
+                    <div id="kpi-recaudacion-total" class="caja-kpi-valor">0,00 €</div>
+                </div>
+            </div>
+
+            <div class="desglose-zonas-caja">
+                <span>🍔 Cocina Cobrado: <strong id="kpi-cobrado-comida">0,00 €</strong></span>
+                <span>🍹 Barra Cobrado: <strong id="kpi-cobrado-barra">0,00 €</strong></span>
+                <span>🧾 Tickets: <strong id="kpi-num-tickets">0</strong></span>
+            </div>
+
+            <div style="font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">📜 Últimos Cobros Registrados Hoy:</div>
+            <div id="historial-caja-lista" class="historial-caja-lista">
+                <div style="color:#64748b; text-align:center; padding:15px;">Cargando movimientos de caja...</div>
+            </div>
+
+            <div class="modal-caja-footer">
+                <button type="button" id="btn-cierre-z" class="btn-cierre-z" onclick="ejecutarCierreCaja()">🔒 Cerrar Caja del Día (Poner a 0 €)</button>
+                <button type="button" onclick="cerrarModalCaja()" style="background:#e2e8f0; color:#0f172a; border:none; padding:11px 18px; border-radius:10px; font-weight:800; cursor:pointer;">Cerrar Ventana</button>
+            </div>
         </div>
     </div>
 
@@ -535,32 +710,10 @@
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun.cloudflare.com:3478' },
                 {
-                    urls: 'turn:free.expressturn.com:3478',
-                                urls: 'turn: relay1.expressturn.com:80',
-                                 urls: 'turn:relay1.expressturn.com:443',
-                                urls: 'turn: relay1.expressturn.com:3478',
-                                 urls: 'turn:relay2.expressturn.com:3478',
-                                 urls: 'turn:relay3.expressturn.com:3478',
-                                 urls: 'turn:relay4.expressturn.com:3478',
-                                 urls: 'turn:relay5.expressturn.com:3478',
-                                 urls: 'turn:relay6.expressturn.com:3478',
-                                 urls: 'turn:relay7.expressturn.com:3478',
-                                 urls: 'turn:relay8.expressturn.com:3478',
-                                 urls: 'turn:relay9.expressturn.com:3478',
-                                urls: 'turn:relay10.expressturn.com:3478',
-                                urls: 'turn:relay11.expressturn.com:3478',
-                                urls: 'turn:relay12.expressturn.com:3478',
-                                urls: 'turn:relay13.expressturn.com:3478',
-                              urls: 'turn:relay14.expressturn.com:3478',
-                                urls: 'turn:relay15.expressturn.com:3478',
-                                urls: 'turn:relay16.expressturn.com:3478',
-                                urls: 'turn:relay17.expressturn.com:3478',
-                                urls: 'turn:relay18.expressturn.com:3478',
-                                urls: 'turn:relay19.expressturn.com:3478',
-                                urls: 'turn:global.expressturn.com:3478',
-                    username: '000000002102154901',
-                    credential: 'zTwHEShFvegqotlDMnVBLEt7pTo='
-                    Secret Key :'d268a0d122d9fdd7d8a94363840c0f87',
+                    urls: 'turn:global.expressturn.com:3478',
+                    username: '000000002111173653',
+                    credential: 'g91nvjMpDOU2UYFJ6NDB0V48Alo='
+                    Secret Key: 'd268a0d122d9fdd7d8a94363840c0f87'
                 }
             ],
             iceCandidatePoolSize: 10
@@ -860,9 +1013,99 @@
         async function completarPedido(id) {
             try {
                 const res = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, { method: 'DELETE' });
-                if (res.ok) cargarPedidosAdmin();
+                if (res.ok) {
+                    const data = await res.json();
+                    const cobrado = Number(data.importe) || 0;
+                    mostrarAviso(`💰 Cobrado y añadido a caja: +${cobrado.toFixed(2)} €`, '#10b981');
+                    cargarPedidosAdmin();
+                    actualizarResumenCaja();
+                }
             } catch (e) {
                 mostrarAviso('❌ Error al borrar comanda.', '#ef4444');
+            }
+        }
+
+        // =========================================================================
+        // 6. CONTROL DE CAJA Y RECAUDACIÓN TOTAL DEL DÍA
+        // =========================================================================
+        var confirmarCierrePendiente = false;
+
+        async function actualizarResumenCaja() {
+            try {
+                const res = await fetch(`${URL_SERVIDOR}/api/caja`);
+                const data = await res.json();
+                if (!data.ok) return;
+
+                const enCaja = Number(data.cobradoCaja) || 0;
+                const pendiente = Number(data.pendienteMesas) || 0;
+                const totalDia = Number(data.recaudacionTotalDia) || (enCaja + pendiente);
+
+                const badgeRapida = document.getElementById('badge-caja-rapida');
+                if (badgeRapida) badgeRapida.textContent = `${enCaja.toFixed(2)} €`;
+
+                const kpiCaja = document.getElementById('kpi-en-caja');
+                if (kpiCaja) {
+                    kpiCaja.textContent = `${enCaja.toFixed(2)} €`;
+                    document.getElementById('kpi-pendiente-mesas').textContent = `${pendiente.toFixed(2)} €`;
+                    document.getElementById('kpi-recaudacion-total').textContent = `${totalDia.toFixed(2)} €`;
+                    document.getElementById('kpi-cobrado-comida').textContent = `${(Number(data.cobradoComida) || 0).toFixed(2)} €`;
+                    document.getElementById('kpi-cobrado-barra').textContent = `${(Number(data.cobradoBarra) || 0).toFixed(2)} €`;
+                    document.getElementById('kpi-num-tickets').textContent = String(data.totalTicketsCobrados || 0);
+
+                    const listaEl = document.getElementById('historial-caja-lista');
+                    const historial = Array.isArray(data.historial) ? [...data.historial].reverse() : [];
+                    if (historial.length === 0) {
+                        listaEl.innerHTML = '<div style="color:#64748b; text-align:center; padding:15px;">Aún no se ha cobrado ninguna comanda hoy.</div>';
+                    } else {
+                        listaEl.innerHTML = historial.map(h => `
+                            <div class="historial-item">
+                                <div>
+                                    <strong>${h.mesa_id}</strong> <span style="color:#64748b;">(${h.hora_cobro || ''})</span>
+                                    <div style="font-size:0.78rem; color:#475569;">${h.detalles}</div>
+                                </div>
+                                <strong style="color:#059669; white-space:nowrap; margin-left:10px;">+${(Number(h.importe) || 0).toFixed(2)} €</strong>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Error consultando caja:', e);
+            }
+        }
+
+        function abrirModalCaja() {
+            confirmarCierrePendiente = false;
+            const btnCierre = document.getElementById('btn-cierre-z');
+            btnCierre.textContent = '🔒 Cerrar Caja del Día (Poner a 0 €)';
+            btnCierre.classList.remove('confirmando');
+            document.getElementById('modal-caja-overlay').classList.add('abierto');
+            actualizarResumenCaja();
+        }
+
+        function cerrarModalCaja() {
+            document.getElementById('modal-caja-overlay').classList.remove('abierto');
+        }
+
+        async function ejecutarCierreCaja() {
+            const btnCierre = document.getElementById('btn-cierre-z');
+            if (!confirmarCierrePendiente) {
+                confirmarCierrePendiente = true;
+                btnCierre.textContent = '⚠️ Pulsa otra vez para confirmar Cierre Z';
+                btnCierre.classList.add('confirmando');
+                return;
+            }
+            try {
+                const res = await fetch(`${URL_SERVIDOR}/api/caja/cierre`, { method: 'POST' });
+                const data = await res.json();
+                if (data.ok) {
+                    confirmarCierrePendiente = false;
+                    btnCierre.textContent = '🔒 Cerrar Caja del Día (Poner a 0 €)';
+                    btnCierre.classList.remove('confirmando');
+                    mostrarAviso(`🔒 Cierre realizado. Total cerrado: ${(Number(data.totalCerrado) || 0).toFixed(2)} €`, '#2563eb');
+                    actualizarResumenCaja();
+                }
+            } catch (e) {
+                mostrarAviso('❌ Error al realizar el cierre de caja.', '#ef4444');
             }
         }
 
@@ -885,7 +1128,11 @@
             renderizarPlanoSala();
             actualizarVistaCarrito();
             cargarPedidosAdmin();
-            setInterval(cargarPedidosAdmin, 3000);
+            actualizarResumenCaja();
+            setInterval(() => {
+                cargarPedidosAdmin();
+                actualizarResumenCaja();
+            }, 3000);
         });
     </script>
 </body>
