@@ -13,7 +13,6 @@
             --primary: #2563eb;
             --success: #10b981;
             --success-hover: #059669;
-            --warning: #f59e0b;
             --border: #e2e8f0;
             --radius-lg: 16px;
             --radius-md: 10px;
@@ -43,25 +42,9 @@
             gap: 12px;
             border-bottom: 2px solid var(--border);
             padding-bottom: 15px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         .header h1 { margin: 0; font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
-        .header-right {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn-volver {
-            text-decoration: none;
-            background: #eff6ff;
-            color: var(--primary);
-            border: 1px solid #bfdbfe;
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.85rem;
-        }
         .estado-conexion {
             font-size: 0.85rem;
             font-weight: 700;
@@ -70,44 +53,16 @@
             background: #ecfdf5;
             color: #10b981;
         }
-
-        /* Barra resumen de importes activos en cada mesa / taburete */
-        .resumen-sitios {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 12px 15px;
-            margin-bottom: 18px;
-        }
-        .resumen-sitios-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
+        .btn-caja-cocina {
+            background: #059669;
+            color: #fff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 20px;
             font-weight: 800;
-            margin-bottom: 10px;
-            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
         }
-        .chips-sitios {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .chip-sitio {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-        .chip-sitio.con-pedido {
-            background: #fffbeb;
-            border-color: var(--warning);
-            color: #b45309;
-        }
-
         .columns-wrapper {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -155,15 +110,8 @@
             border-radius: 6px;
             font-size: 0.95rem;
         }
-        .badge-precio-card {
-            background: #ecfdf5;
-            color: #059669;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
         .card-body {
-            font-size: 0.98rem;
+            font-size: 1rem;
             font-weight: 600;
             color: #1e293b;
             line-height: 1.5;
@@ -200,19 +148,17 @@
     <div class="container">
         <div class="header">
             <h1>👨‍🍳 Panel de Cocina y Barra (Tiempo Real)</h1>
-            <div class="header-right">
-                <a href="index.html" class="btn-volver">← Volver a Comandero</a>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+                <a href="index.html" style="text-decoration:none; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; padding:7px 14px; border-radius:20px; font-weight:700; font-size:0.85rem;">← Comandero</a>
+                <button type="button" class="btn-caja-cocina" onclick="verCajaRapidaCocina()">💰 Caja: <span id="caja-cocina-valor">0,00 €</span></button>
                 <div id="estado-conexion" class="estado-conexion">⏳ Conectando con Render...</div>
             </div>
         </div>
 
-        <!-- RESUMEN DE PRECIOS EN CADA UNA DE LAS 6 MESAS INT, 6 EXT Y 5 TABURETES -->
-        <div class="resumen-sitios">
-            <div class="resumen-sitios-header">
-                <span>💶 Estado de Cuenta por Sitio (6 Interiores · 6 Exteriores · 5 Taburetes)</span>
-                <span id="total-general-cocina" style="color:#2563eb;">Total Activo: 0,00 €</span>
-            </div>
-            <div id="chips-sitios" class="chips-sitios"></div>
+        <div id="banner-caja-cocina" style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:12px 16px; border-radius:12px; margin-bottom:16px; font-weight:800; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <span>💵 Cobrado en Caja: <strong id="cocina-kpi-caja">0,00 €</strong></span>
+            <span>⏳ Pendiente Mesas: <strong id="cocina-kpi-pendiente">0,00 €</strong></span>
+            <span>📊 Recaudación Total Día: <strong id="cocina-kpi-total">0,00 €</strong></span>
         </div>
 
         <div class="columns-wrapper">
@@ -228,29 +174,26 @@
     </div>
 
     <script>
-    // =========================================================================
-    // 1. CONFIGURACIÓN DEL SERVIDOR EN RENDER Y STUN/TURN
-    // =========================================================================
-    var URL_SERVIDOR = window.URL_SERVIDOR || 'https://comandero-m7hv.onrender.com';
-    window.URL_SERVIDOR = URL_SERVIDOR;
+        var URL_SERVIDOR = window.URL_SERVIDOR || 'https://comandero-m7hv.onrender.com';
+        window.URL_SERVIDOR = URL_SERVIDOR;
 
-    var configuracionICE = window.configuracionICE || {
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' },
-            {
-                urls: 'turn:global.expressturn.com:3478',
-                username: '000000002111173653',
-                credential: 'g91nvjMpDOU2UYFJ6NDB0V48Alo='
-                Secret Key: 'd268a0d122d9fdd7d8a94363840c0f87'
-            }
-        ],
-        iceCandidatePoolSize: 10
-    };
-    window.configuracionICE = configuracionICE;
+        var configuracionICE = window.configuracionICE || {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                {
+                  urls: 'turn:global.expressturn.com:3478',
+                  username: '000000002111173653',
+                  credential: 'g91nvjMpDOU2UYFJ6NDB0V48Alo='
+                  Secret Key : 'd268a0d122d9fdd7d8a94363840c0f87'
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
+        window.configuracionICE = configuracionICE;
 
-        const SITIOS_SALA = [
+        var SITIOS_SALA = [
             'Interior - Mesa 1', 'Interior - Mesa 2', 'Interior - Mesa 3',
             'Interior - Mesa 4', 'Interior - Mesa 5', 'Interior - Mesa 6',
             'Exterior - Mesa 1', 'Exterior - Mesa 2', 'Exterior - Mesa 3',
@@ -297,12 +240,16 @@
                     sumaGlobal += imp;
                 });
 
-                document.getElementById('total-general-cocina').textContent = `Total Activo: ${sumaGlobal.toFixed(2)} €`;
-                chipsEl.innerHTML = SITIOS_SALA.map(sitio => {
-                    const imp = totalesSitio[sitio] || 0;
-                    const nombreCorto = sitio.replace('Interior - ', 'Int. ').replace('Exterior - ', 'Ext. ').replace('Barra - ', '');
-                    return `<span class="chip-sitio ${imp > 0 ? 'con-pedido' : ''}">${nombreCorto}: <strong>${imp.toFixed(2)} €</strong></span>`;
-                }).join('');
+                if (document.getElementById('total-general-cocina')) {
+                    document.getElementById('total-general-cocina').textContent = `Total Activo: ${sumaGlobal.toFixed(2)} €`;
+                }
+                if (chipsEl) {
+                    chipsEl.innerHTML = SITIOS_SALA.map(sitio => {
+                        const imp = totalesSitio[sitio] || 0;
+                        const nombreCorto = sitio.replace('Interior - ', 'Int. ').replace('Exterior - ', 'Ext. ').replace('Barra - ', '');
+                        return `<span class="chip-sitio ${imp > 0 ? 'con-pedido' : ''}">${nombreCorto}: <strong>${imp.toFixed(2)} €</strong></span>`;
+                    }).join('');
+                }
 
                 let htmlBarra = '';
                 let htmlCocina = '';
@@ -354,15 +301,38 @@
                 const response = await fetch(`${URL_SERVIDOR}/api/pedidos/${id}`, { method: 'DELETE' });
                 if (response.ok) {
                     cargarComandasCocina();
+                    actualizarCajaCocina();
                 }
             } catch (error) {
                 console.error('Error al borrar comanda:', error);
             }
         }
 
+        async function actualizarCajaCocina() {
+            try {
+                const res = await fetch(`${URL_SERVIDOR}/api/caja`);
+                const data = await res.json();
+                if (!data.ok) return;
+                document.getElementById('caja-cocina-valor').textContent = `${(Number(data.cobradoCaja) || 0).toFixed(2)} €`;
+                document.getElementById('cocina-kpi-caja').textContent = `${(Number(data.cobradoCaja) || 0).toFixed(2)} €`;
+                document.getElementById('cocina-kpi-pendiente').textContent = `${(Number(data.pendienteMesas) || 0).toFixed(2)} €`;
+                document.getElementById('cocina-kpi-total').textContent = `${(Number(data.recaudacionTotalDia) || 0).toFixed(2)} €`;
+            } catch (e) {}
+        }
+
+        function verCajaRapidaCocina() {
+            const banner = document.getElementById('banner-caja-cocina');
+            banner.style.display = banner.style.display === 'none' ? 'flex' : 'none';
+            actualizarCajaCocina();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             cargarComandasCocina();
-            setInterval(cargarComandasCocina, 2500);
+            actualizarCajaCocina();
+            setInterval(() => {
+                cargarComandasCocina();
+                actualizarCajaCocina();
+            }, 2500);
         });
     </script>
 </body>

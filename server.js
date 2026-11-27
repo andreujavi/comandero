@@ -47,26 +47,47 @@ const DB_FILE = path.join(__dirname, 'database.json');
 
 // Inicializar database.json si no existe
 if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ pedidos: [] }, null, 2), 'utf8');
+    fs.writeFileSync(DB_FILE, JSON.stringify({ pedidos: [], historial_caja: [] }, null, 2), 'utf8');
 }
 
 function leerBaseDatos() {
     try {
         const raw = fs.readFileSync(DB_FILE, 'utf8');
         const data = JSON.parse(raw);
-        return Array.isArray(data.pedidos) ? data : { pedidos: [] };
+        return {
+            pedidos: Array.isArray(data.pedidos) ? data.pedidos : [],
+            historial_caja: Array.isArray(data.historial_caja) ? data.historial_caja : []
+        };
     } catch (error) {
         console.error('Error leyendo database.json:', error);
-        return { pedidos: [] };
+        return { pedidos: [], historial_caja: [] };
     }
 }
 
 function guardarBaseDatos(data) {
     try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+        fs.writeFileSync(DB_FILE, JSON.stringify({
+            pedidos: Array.isArray(data.pedidos) ? data.pedidos : [],
+            historial_caja: Array.isArray(data.historial_caja) ? data.historial_caja : []
+        }, null, 2), 'utf8');
     } catch (error) {
         console.error('Error guardando database.json:', error);
     }
+}
+
+function calcularImportePedidoServer(pedido) {
+    if (typeof pedido.importe === 'number' && !isNaN(pedido.importe)) {
+        return pedido.importe;
+    }
+    if (Array.isArray(pedido.items) && pedido.items.length > 0) {
+        return pedido.items.reduce((acc, it) => acc + ((Number(it.precio) || 0) * (Number(it.cantidad) || 1)), 0);
+    }
+    const texto = String(pedido.detalles || '');
+    const matchTotal = texto.match(/Total:\s*([\d.,]+)\s*€/i);
+    if (matchTotal) {
+        return parseFloat(matchTotal[1].replace(',', '.')) || 0;
+    }
+    return 0;
 }
 
 // =========================================================================
@@ -120,6 +141,7 @@ app.post(['/', '/api/pedidos', '/api/pedido'], (req, res) => {
         items: Array.isArray(listaArticulos) ? listaArticulos : [],
         created_at: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     };
+    nuevoPedido.importe = calcularImportePedidoServer(nuevoPedido);
 
     db.pedidos.push(nuevoPedido);
     guardarBaseDatos(db);
@@ -127,20 +149,70 @@ app.post(['/', '/api/pedidos', '/api/pedido'], (req, res) => {
     res.status(201).json({ ok: true, mensaje: 'Pedido registrado', pedido: nuevoPedido });
 });
 
-// Borrar un pedido individual al pulsar "Servido" en cocina.html
+// Borrar/Cobrar un pedido individual al pulsar "Servido / Cobrado" y sumarlo a Caja
 app.delete(['/api/pedidos/:id', '/api/pedido/:id'], (req, res) => {
     const idBuscado = req.params.id;
     const db = leerBaseDatos();
-    const longitudInicial = db.pedidos.length;
+    const pedidoCobrado = db.pedidos.find(p => String(p.id) === String(idBuscado));
 
-    db.pedidos = db.pedidos.filter(p => String(p.id) !== String(idBuscado));
-
-    if (db.pedidos.length === longitudInicial) {
+    if (!pedidoCobrado) {
         return res.status(404).json({ error: 'Pedido no encontrado.' });
     }
 
+    const importeCobrado = calcularImportePedidoServer(pedidoCobrado);
+    db.historial_caja.push({
+        id: pedidoCobrado.id,
+        mesa_id: pedidoCobrado.mesa_id,
+        tipo: pedidoCobrado.tipo || 'comida',
+        detalles: pedidoCobrado.detalles,
+        importe: importeCobrado,
+        hora_pedido: pedidoCobrado.created_at || '',
+        hora_cobro: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        fecha: new Date().toISOString().slice(0, 10)
+    });
+
+    db.pedidos = db.pedidos.filter(p => String(p.id) !== String(idBuscado));
     guardarBaseDatos(db);
-    res.json({ ok: true, mensaje: 'Pedido eliminado correctamente', id: idBuscado });
+
+    res.json({ ok: true, mensaje: 'Pedido cobrado y registrado en caja', id: idBuscado, importe: importeCobrado });
+});
+
+// =========================================================================
+// ENDPOINTS DE CAJA Y RECAUDACIÓN TOTAL DEL DÍA
+// =========================================================================
+
+app.get('/api/caja', (req, res) => {
+    const db = leerBaseDatos();
+    const cobradoCaja = db.historial_caja.reduce((acc, item) => acc + (Number(item.importe) || 0), 0);
+    const pendienteMesas = db.pedidos.reduce((acc, p) => acc + calcularImportePedidoServer(p), 0);
+
+    const cobradoComida = db.historial_caja
+        .filter(i => i.tipo !== 'barra')
+        .reduce((acc, i) => acc + (Number(i.importe) || 0), 0);
+    const cobradoBarra = db.historial_caja
+        .filter(i => i.tipo === 'barra')
+        .reduce((acc, i) => acc + (Number(i.importe) || 0), 0);
+
+    res.json({
+        ok: true,
+        cobradoCaja,
+        pendienteMesas,
+        recaudacionTotalDia: cobradoCaja + pendienteMesas,
+        cobradoComida,
+        cobradoBarra,
+        totalTicketsCobrados: db.historial_caja.length,
+        totalComandasPendientes: db.pedidos.length,
+        historial: db.historial_caja
+    });
+});
+
+// Reiniciar caja al hacer el cierre diario (Cierre Z)
+app.post('/api/caja/cierre', (req, res) => {
+    const db = leerBaseDatos();
+    const totalCerrado = db.historial_caja.reduce((acc, item) => acc + (Number(item.importe) || 0), 0);
+    db.historial_caja = [];
+    guardarBaseDatos(db);
+    res.json({ ok: true, mensaje: 'Cierre de caja realizado correctamente', totalCerrado });
 });
 
 // =========================================================================
